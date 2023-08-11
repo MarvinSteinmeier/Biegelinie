@@ -43,417 +43,18 @@ class System:
 
         self.position_list.append(new_position)
         return new_position
-
-    def set_up_boundary_conditions(self, beam, bond):
-        # the following logic to determine the position was implemented for the matching conditions and is copied here because it works better as the one before
-        position = None
-        position_intersection = [pos for pos in beam.position_list if pos in bond.position_list]
-        if not position_intersection:  # there is a rigid beam between the bond and the beam
-            for posi in bond.position_list:
-                for con in posi.connection_list:
-                    if isinstance(con, RigidBeam):
-                        other_pos = [po for po in con.position_list if po not in bond.position_list][0]
-                        if any(other_pos == p for p in beam.position_list):
-                            rigid_beam = con
-                            position_int = [rpos for rpos in beam.position_list if rpos in rigid_beam.position_list]
-                            if position_int:
-                                position = position_int[0]
-                            break
-        else:
-            position = position_intersection[0]
-
-        if beam.coordinate_system_position:
-            i = 0
-        else:
-            i = 1
-
-        if position == beam.position_list[i]:
-            x_position = 0
-            sign = True  # positive cross section; default "sign" is positive = True
-        else:
-            x_position = beam.length
-            sign = False  # negative cross section; default "sign" is negative = False
-
-
-        bond.bc_position["position"] = x_position
-        for index, entry in enumerate(bond.constraints):
-            if entry:
-                bond.bc_conditions[index]["value"].append(str(0))
-
-        for connection in position.connection_list:
-            if not connection.in_condition_considered:
-                connection.in_condition_considered = True
-                if connection.type == "rigid_beam":
-                    if len(position.bond_list) > 0:  # rigid beam is "outside"
-                        for pos in connection.position_list:
-                            for con in pos.connection_list:
-                                if not con.in_condition_considered:
-                                    con.in_condition_considered = True
-                                    if con.type == "linear_spring":
-                                        if position != pos:
-                                            bond.bc_conditions[1]["value"].append([not sign, "rigid_" + con.type])
-                                    elif con.type == "single_force":
-                                        if position != pos:
-                                            if all([con.positive, sign]) or all([con.positive, not sign]):
-                                                sign_force = True
-                                            else:
-                                                sign_force = False
-                                            if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
-                                                sign_force = not sign_force 
-                                            bond.bc_conditions[1]["value"].append([sign_force, con.type])
-                                            
-                                    else:
-                                        self.extend_condition(bond, con, beam, sign)
-                    else:  # rigid beam is "inside"
-                        bond.bc_conditions[1]["value"].append([not sign, connection.type])
-                        bond.bc_conditions[3]["value"].append([sign, connection.type])
-                        for pos in connection.position_list:
-                            for con in pos.connection_list:
-                                if not con.in_condition_considered:
-                                    con.in_condition_considered = True
-                                    if con.type == "linear_spring":
-                                        if position == pos:
-                                            bond.bc_conditions[1]["value"].append([True, con.type])
-                                    elif con.type == "single_force":
-                                        if position == pos:
-                                            if all([con.positive, sign]) or all([con.positive, not sign]):
-                                                sign_force = False
-                                            else:
-                                                sign_force = True
-                                            if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
-                                                sign_force = not sign_force 
-                                            bond.bc_conditions[1]["value"].append([sign_force, con.type])
-                                    else:
-                                        self.extend_condition(bond, con, beam, sign)
-                else:
-                    self.extend_condition(bond, connection, beam, sign)
-
-    @staticmethod
-    def extend_condition(bond, connection, beam, sign):
-        if connection.type == "torsional_spring":
-            bond.bc_conditions[1]["value"].append([not sign, connection.type])
-        elif connection.type == "linear_spring":
-            bond.bc_conditions[0]["value"].append([not sign, connection.type])
-        elif connection.type == "single_moment":
-            if not sign:  # the single moment is subtracted at the negative cross section
-                sign_moment = False
-            else:  # the single moment is added at the positive cross section
-                sign_moment = True
-            if not beam.coordinate_system_position:  # the sign needs to be changed, when the coordinate system is on the other side
-                sign_moment = not sign_moment  
-            if not connection.positive:  # the sign needs to be changed, when the moment is negative
-                sign_moment = not sign_moment 
-            if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
-                sign_moment = not sign_moment 
-            bond.bc_conditions[1]["value"].append([sign_moment, connection.type])
-        elif connection.type == "single_force":
-            if not sign:  # the single force is subtracted at the negative cross section
-                sign_force = False
-            else:
-                sign_force = True
-            if not connection.positive:  # the sign needs to be changed, when the force is negative
-                sign_force = not sign_force
-            if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
-                sign_force = not sign_force 
-            bond.bc_conditions[0]["value"].append([sign_force, connection.type])
-
-    @staticmethod
-    def set_up_matching_conditions(beam, bond):
-        # determine where we are
-        rigid = False
-        cross_section_is_default = True
-        position = None
-        position_intersection = [pos for pos in beam.position_list if pos in bond.position_list]
-        if not position_intersection:  # there is a rigid beam between the bond and the beam
-            for posi in bond.position_list:
-                for con in posi.connection_list:
-                    if isinstance(con, RigidBeam):
-                        other_pos = [po for po in con.position_list if po not in bond.position_list][0]
-                        if any(other_pos == p for p in beam.position_list):
-                            rigid_beam = con
-                            rigid = True
-                            position_int = [rpos for rpos in beam.position_list if rpos in rigid_beam.position_list]
-                            if position_int:
-                                position = position_int[0]
-                            break
-        else:
-            position = position_intersection[0]
-
-        if beam.coordinate_system_position:
-            i = 0
-            j = 1 
-        else:
-            i = 1
-            j = 0
+    
+    def determine_conditions(self):
+        """this method determines the boundary and matching conditions of the beam system"""
         
-        if position == beam.position_list[i]:
-            x_beam = 0
-        else:
-            x_beam = beam.length
-
-        if x_beam != 0:
-            cross_section = False  # negative cross section; default "sign" is negative = False
-        else:
-            cross_section = True  # positive cross section; default "sign" is positive = True
-
-        if len(bond.position_list)>1 and not bond.type == "rigid_beam_MC":
-            if beam.position_list[0].z_coordinate == bond.position_list[0].z_coordinate and beam.position_list[0].x_coordinate >= bond.position_list[0].x_coordinate:
-                cross_section_is_default = False  
-                if x_beam == 0:
-                    cross_section = False                 
+        for beam in self.beam_list:
+            for bond in beam.bond_list:
+                if isinstance(bond, MatchingConditionSymbol):
+                    determine_matching_conditions(beam, bond)
                 else:
-                    cross_section = True
-                                      
-            if beam.position_list[0].z_coordinate == bond.position_list[1].z_coordinate and beam.position_list[0].x_coordinate < bond.position_list[1].x_coordinate:
-                cross_section_is_default = False
-                if x_beam == 0:
-                    cross_section = False
-                else:
-                    cross_section = True                  
-        else:
-            if x_beam == 0:
-                cross_section = True
-            else:
-                cross_section = False 
+                    determine_boundary_conditions(beam, bond)  
 
-        index_matching_conditions = int(cross_section)
-
-        if not beam.coordinate_system_position:
-            cross_section_is_default = not cross_section_is_default
-            index_matching_conditions = not index_matching_conditions
-        if not beam.coordinate_system_orientation:
-            cross_section_is_default = not cross_section_is_default
-            
-        bond.cross_sections_default[index_matching_conditions] = cross_section_is_default
-        bond.mc_position[index_matching_conditions]["position"] = sp.latex(x_beam)
-        bond.mc_position[index_matching_conditions]["index"] = str(beam.beam_index)
-
-        # is needed for some of the matching conditions that are set in the frontend
-        if bond.type == "rigid_beam_MC":
-            bond.beam_direction[0] = bond.beam_list[0].coordinate_system_orientation
-            bond.beam_direction[1] = bond.beam_list[1].coordinate_system_orientation
-        else:
-            if len(bond.position_list)>1:
-                if position.z_coordinate == bond.position_list[0].z_coordinate:
-                    bond.beam_direction[0] = beam.coordinate_system_orientation
-                else:
-                    bond.beam_direction[1] = beam.coordinate_system_orientation
-            else:
-                if len(bond.beam_list)>1:
-                    if bond.beam_list[1].position_list[0].x_coordinate >= beam.position_list[0].x_coordinate:
-                        bond.beam_direction[0] = beam.coordinate_system_orientation
-                    else:
-                        bond.beam_direction[1] = beam.coordinate_system_orientation
-                else:
-                    if beam.position_list[0].x_coordinate < bond.position_list[0].x_coordinate:
-                        bond.beam_direction[0] = beam.coordinate_system_orientation
-                    else:
-                        bond.beam_direction[1] = beam.coordinate_system_orientation
-        
-
-        for index, entry in enumerate(bond.constraints_frontend):
-            if entry:
-                bond.matching_conditions[index_matching_conditions][index]["value"].append(str(0))
-
-        if bond.type == "rigid_beam_MC": # this is a special matching condition
-            if position == bond.position_list[1]: # one needs to account for the change of the shear force and the displacement, which is incorporated on the "right side" of the rigid beam
-                bond.matching_conditions[index_matching_conditions][1]["value"].append([not cross_section, "rigid_beam"])
-                for pos in bond.position_list:
-                    if pos.beam_list:
-                        if pos.beam_list[0] != beam:
-                            other_beam = pos.beam_list[0]
-                if other_beam.coordinate_system_orientation:
-                    bond.matching_conditions[index_matching_conditions][3]["value"].append([True, "rigid_beam"])        
-                else:
-                    bond.matching_conditions[index_matching_conditions][3]["value"].append([False, "rigid_beam"])        
-
-        for connection in position.connection_list:
-            if not connection.in_condition_considered:
-                connection.in_condition_considered = True
-                if connection.type == "linear_spring":                     
-                    if not index_matching_conditions: # negative cross section, position_list[0] in bond
-                        sign = True # the spring force is always showing "up" (against default z)
-                    else:
-                        sign = False
-                    if not beam.coordinate_system_orientation:
-                        sign = not sign # the sign needs to be changed, when the orientation is flipped
-                    bond.matching_conditions[index_matching_conditions][0]["value"].append([sign, connection.type])
-                    
-                    # if the bond is a rigid beam as matching condition, a linear spring is also (and only on the right side of the rigid beam) accounted for the moment condition
-                    if bond.type == "rigid_beam_MC" and position == bond.position_list[1]: # the appearing spring force is accounted a the shear force and must not be incorporated for the moment condition - the reference point is the "left" side of the rigid beam
-                        bond.matching_conditions[index_matching_conditions][1]["value"].append([not sign, connection.type])
-
-                elif connection.type == "torsional_spring":
-                    # i think the following is not necessary anymore because one cannot assign properly the torsional spring to one of the two neighbouring beams at a bearing as matching condition (there is an error raise in system.py)
-                    # if bond.type == "bearing_MC":
-                    #     if cross_section:
-                    #         bond.matching_conditions[index_matching_conditions][1]["value"].append([False, connection.type])
-                    #     else:
-                    #         bond.matching_conditions[index_matching_conditions][1]["value"].append([True, connection.type])
-                    # else:
-                    if not index_matching_conditions:
-                        sign = True # the default for the negative cross section is a positive moment
-                    else:
-                        sign = False # the default for the positive cross section is a negative moment
-                    if not cross_section_is_default:
-                        sign = not sign
-                    if not beam.coordinate_system_orientation:
-                        sign = not sign # the sign needs to be changed, when the orientation is flipped (due to cross_section_default)
-                    bond.matching_conditions[index_matching_conditions][1]["value"].append([sign, connection.type])
-
-                elif connection.type == "single_moment":
-                    if not index_matching_conditions:
-                        sign = False
-                    else:
-                        sign = True
-                    if not cross_section_is_default:
-                        sign = not sign
-                    if not beam.coordinate_system_position:
-                        sign = not sign # the sign needs to be changed, when the coordinate system is on the other side
-                    if not connection.positive:
-                        sign = not sign # the sign needs to be changed, when the moment is negative
-                    bond.matching_conditions[index_matching_conditions][1]["value"].append([sign, connection.type])
-
-                elif connection.type == "single_force":
-                    if not index_matching_conditions:
-                        sign = False
-                    else:
-                        sign = True
-                    if not connection.positive:
-                        sign = not sign
-                    bond.matching_conditions[index_matching_conditions][0]["value"].append([sign, connection.type])
-                    # if the bond is a rigid beam as matching condition, a linear spring is also (and only on the right side of the rigid beam) accounted for the moment condition
-                    if bond.type == "rigid_beam_MC" and position == bond.position_list[1]: # the appearing spring force is accounted a the shear force and must not be incorporated for the moment condition - the reference point is the "left" side of the rigid beam
-                        bond.matching_conditions[index_matching_conditions][1]["value"].append([not sign, connection.type])
-
-                elif connection.type == "rigid_beam":
-                    if rigid:
-                        if bond.type == "bearing_MC": # the conditions of bearing MC change if there is a rigid beam
-                            bond.matching_conditions[0][2]["value"].append(str(0))
-                            bond.matching_conditions[1][2]["value"].append(str(0))
-                        if bond.type == "linear_spring_MC":  # due to the implementation in the frontend, this is necessary for the linear spring MC
-                            bond.matching_conditions[index_matching_conditions][3]["value"].append(str(0))
-                        
-                        if beam.position_list[i] == rigid_beam.position_list[j]:
-                            sign_rigid = False
-                        else:
-                            sign_rigid = True
-
-                        bond.matching_conditions[index_matching_conditions][1]["value"].append([sign_rigid, connection.type])
-                        
-                        if not beam.coordinate_system_orientation: # this is necessary since the orientation of the angle is changing
-                            sign_rigid = not sign_rigid
-                        
-                        bond.matching_conditions[index_matching_conditions][3]["value"].append([not sign_rigid, connection.type])
-
-                        for pos in connection.position_list:
-                            for con in pos.connection_list:
-                                if not con.in_condition_considered:
-                                    con.in_condition_considered = True
-                                    
-                                    if con.type == "linear_spring":
-                                        if pos == position: # the shear force is at the beam (and separated from the bond via the rigid beam)
-                                            
-                                            addition_for_shear_force = ""
-                                            # the determination of the sign was taken from above
-                                            if not index_matching_conditions: # negative cross section, position_list[0] in bond
-                                                sign_linear_spring = True # the spring force is always showing "up" (against default z)
-                                            else:
-                                                sign_linear_spring = False
-                                            if not beam.coordinate_system_orientation:
-                                                sign_linear_spring = not sign_linear_spring # the sign needs to be changed, when the orientation is flipped
-                                            
-                                            # it seems that the moment is always positive
-                                            bond.matching_conditions[index_matching_conditions][1]["value"].append([True, con.type])
-                                        else: # the linear spring is directly at the bond
-                                            addition_for_shear_force = "_rigid" 
-
-                                            sign_linear_spring = sign_rigid
-                                            if not beam.coordinate_system_orientation:  # the change of the sign with the following two ifs was trial and error
-                                                sign_linear_spring = not sign_linear_spring
-                                            if not beam.coordinate_system_position:
-                                                sign_linear_spring = not sign_linear_spring
-
-                                        bond.matching_conditions[index_matching_conditions][0]["value"].append([sign_linear_spring, con.type+addition_for_shear_force])
-                                    elif con.type == "single_force":
-                                        if not index_matching_conditions:
-                                            sign_force = False
-                                        else:
-                                            sign_force = True
-                                        if not con.positive:
-                                            sign_force = not sign_force
-                                        bond.matching_conditions[index_matching_conditions][0]["value"].append([sign_force, con.type])
-
-                                        sign_moment = not con.positive
-                                        if not beam.coordinate_system_orientation:
-                                            sign_moment = not sign_moment
-                                        if pos == position:
-                                            bond.matching_conditions[index_matching_conditions][1]["value"].append([sign_moment, con.type])
-                                    elif con.type == "torsional_spring":
-                                        sign_torsional_spring = sign_rigid
-                                        if not beam.coordinate_system_orientation:  # is necessary due to the change of the sign above (with not beam.coordinate_system_orientation)
-                                            sign_torsional_spring = not sign_torsional_spring
-                                        bond.matching_conditions[index_matching_conditions][1]["value"].append([sign_torsional_spring, con.type])
-                                    elif con.type == "single_moment":
-                                        if not index_matching_conditions:
-                                            sign_moment = False
-                                        else:
-                                            sign_moment = True
-                                        if not cross_section_is_default:
-                                            sign_moment = not sign_moment
-                                        if not beam.coordinate_system_position:
-                                            sign_moment = not sign_moment # the sign needs to be changed, when the coordinate system is on the other side
-                                        if not con.positive:
-                                            sign_moment = not sign_moment # the sign needs to be changed, when the moment is negative
-
-                                        bond.matching_conditions[index_matching_conditions][1]["value"].append([sign_moment, con.type])
-
-                                    elif con.type == "bearing_connection":
-                                        # determine sign based on coordinate system position of "other" beam
-                                        for pos in bond.position_list:
-                                            if pos.beam_list:
-                                                if pos.beam_list[0] != beam:
-                                                    other_beam = pos.beam_list[0]
-                                            else:
-                                                for conne in pos.connection_list:
-                                                    if isinstance(conne, RigidBeam):
-                                                        if conne.beam_list[0] != beam:
-                                                            other_beam = conne.beam_list[0]
-                                        if bond.type == "linear_spring_MC":
-                                            if beam.coordinate_system_position:
-                                                sign_moment = not sign_rigid
-                                            else:
-                                                sign_moment = sign_rigid
-                                            bond.matching_conditions[index_matching_conditions][1]["value"].append([sign_moment, con.type])
-                                            # bond.matching_conditions[index_matching_conditions][1]["value"].remove([sign_rigid, connection.type])
-                                        else:
-                                            if beam.coordinate_system_orientation:
-                                                sign_moment = other_beam.coordinate_system_position
-                                            else:
-                                                sign_moment = not other_beam.coordinate_system_position
-                                            if not other_beam.coordinate_system_orientation:
-                                                sign_moment = not sign_moment
-                                            if not index_matching_conditions:
-                                                bond.matching_conditions[index_matching_conditions][1]["value"].append([sign_moment, con.type])
-                                            else:
-                                                bond.matching_conditions[index_matching_conditions][1]["value"].append([not sign_moment, con.type])
-                                        if beam.coordinate_system_orientation:
-                                            bond.matching_conditions[index_matching_conditions][1]["value"].remove([sign_rigid, connection.type])  # the moment condition is different, therefore it is removed
-                                        else:
-                                            bond.matching_conditions[index_matching_conditions][1]["value"].remove([not sign_rigid, connection.type])  # the moment condition is different, therefore it is removed
-                                        
-                                        # i did not have another look on the determination of the sign for the displacement - it looked ok
-                                        if bond.type == "linear_spring_MC":
-                                            bond.matching_conditions[index_matching_conditions][3]["value"].append([not sign_rigid, con.type])
-                                        else:
-                                            bond.matching_conditions[index_matching_conditions][3]["value"].append([sign_rigid, con.type])  
-                                        bond.matching_conditions[index_matching_conditions][3]["value"].remove([not sign_rigid, connection.type])  # the deflection condition is different, therefore it is removed
-
-                                        bond.with_bearing = True
-                                    elif con.type == "rigid_beam": # i think this is just necessary for the joint
-                                        con.in_condition_considered = False 
-                    else:
-                       connection.in_condition_considered = False 
+    
 
     #     if position.connection_list:
     #         for connection in position.connection_list:
@@ -831,6 +432,7 @@ class System:
                                         else:
                                             self.added_values_connections.append(False)
                                     k += 1
+
     # Mit dem else darüber wird ein Beam überpfrüft, welcher keine Streckenlast hat und damit keine konstanten Anteile.
     # Sollte hier ein starrer Beam am jeweiligen Ende des Balkens angebracht sein und noch dazu ein Lager, wird die
     # Variable i um +1 erhöht (und damit der jeweilige Eintrag davon in conditions_evaluated_finished ausgelassen). Hat man
@@ -861,20 +463,16 @@ class System:
                 while len(element) < 4:  # anschließend in eine neue Liste eingefügt.
                     element.insert(0, 0)
                 intermediate_list.append(element)
-                print("Intermediate list after adding line load:", intermediate_list)
         for element in self.conditions_evaluated_MC:
             if element[0] is not False:
                 while len(element) < 4:
                     element.insert(0, 0)
             intermediate_list_MC.append(element)
-            print("Intermediate list MC:", intermediate_list_MC)
-
         for element in self.conditions_evaluated_connections_MC:
             if element[0] is not False:
                 while len(element) < 4:
                     element.insert(0, 0)
             intermediate_list_MC_connections.append(element)
-            print("Intermediate list after adding connection values:", intermediate_list_MC_connections)
 
         # print('Zwischenliste der ÜB sieht so aus:\n', intermediate_list_MC, sep='')
 
@@ -1038,7 +636,6 @@ class System:
                         intermediate_list_MC[7][index] *= (-1)
                     intermediate_list_MC[0] += intermediate_list_MC[4]
                     intermediate_list_MC[3] += intermediate_list_MC[7]
-                    print("Intermediate list after adding joint values:", intermediate_list_MC)
                     intermediate_list_MC[1] += zero_list
                     intermediate_list_MC[5] = zero_list + intermediate_list_MC[5]
                     intermediate_list_MC_finished.extend([intermediate_list_MC[0],
@@ -1171,8 +768,6 @@ class System:
 
         matrix = sp.Matrix(intermediate_list)  # Matrix wird nun als Sympy Matrix erzeugt.
 
-        print("Coefficient matrix:", matrix)
-        
         solution_vector = []  # Der Lösungsvektor wird so erstellt, dass ein Abgleich stattfindet, wie viele Indexe die
         for index, entry in enumerate(
                 intermediate_list[0]):  # erste Gleichung in der Zwischenliste besitzt (da alle Glg. zu
@@ -1266,10 +861,8 @@ class System:
         # Mit Hilfe dieses Blocks werden die vorhandenen fertigen Werte auf der rechten Seite des = der Übergangsbedingungen
         # wenn noch notwendig dem Störvektor hinzugefügt.
 
-        disturbance_vector = sp.Matrix([disturbance_vector_ansatz])  # Fertig aufgefüllter Störvektor wird als Sympy Matrix erstellt.
-       
-        
-        print("Disturbance vector:", disturbance_vector)
+        disturbance_vector = sp.Matrix(
+            [disturbance_vector_ansatz])  # Fertig aufgefüllter Störvektor wird als Sympy Matrix erstellt.
 
         print(matrix, '*', solution_vector, '=', disturbance_vector)
         loesung = list(
@@ -1278,8 +871,6 @@ class System:
         # print(loesung[0][7])  # dafür in diesesm Element dann die jeweiligen Lösungen ansprechbar sind als
         # loesung[0][0], loesung[0][1] usw.
 
-        print("Solution:", loesung)    
-
         # set the solution vector to the solution attribute of the system
         for i in range(len(loesung[0])):
             self.solution.append(str(loesung[0][i]))
@@ -1287,13 +878,6 @@ class System:
         for index, konstante in enumerate(loesung[0]):
             print(solution_vector[index], "=", konstante)
         # hier werden die fertigen Ergebnisse von C1-... sauber ausgegeben.
-
-        # Print solution vector
-        print("Solution vector:", solution_vector)
-
-        ####Ausgabe Versuch
-        #print("Coefficient matrix:", matrix)
-        #print("Solution vector:", solution_vector)
 
 
 class Truss:
@@ -1322,7 +906,8 @@ class Truss:
 
 
 class Beam(Truss):
-    def __init__(self, position_list, line_load, coordinate_system_position, coordinate_system_orientation):
+    symbolic_length = sp.symbols("l")
+    def __init__(self, position_list, coordinate_system_position, coordinate_system_orientation):
         super().__init__(position_list)
         self.position_list = position_list
         self.length = self.set_length(position_list)
@@ -1330,48 +915,56 @@ class Beam(Truss):
         self.coordinate_system_orientation = coordinate_system_orientation
 
         # ansatz of ode
-        self.line_load = self.determine_correct_symbolic_line_load(line_load)  # streckenlast
-        self.shear_force = self.set_shear_force_of_x()
-        self.moment = self.set_moment_of_x()
-        self.angle_phi = self.set_angle_phi_of_x()
-        self.deflection = self.set_deflection_of_x()
+        self.line_load = ""#self.determine_correct_symbolic_line_load(line_load)  # streckenlast
+        self.shear_force = ""#self.set_shear_force_of_x()
+        self.moment = ""#self.set_moment_of_x()
+        self.angle_phi = ""#self.set_angle_phi_of_x()
+        self.deflection = ""#self.set_deflection_of_x()
 
-        self.beam_index = ""
+        self.beam_index = 0
 
         self.bcs = []
         self.mcs = []
 
-    @staticmethod
-    def set_length(positions):
+    
+    def set_length(self, positions):
         """calculates and sets the length of the beam"""
         return sp.nsimplify(abs(positions[0].x_coordinate - positions[1].x_coordinate),
-                            constants=[sp.sqrt(2), sp.sqrt(3)]) * sp.symbols("l")
+                            constants=[sp.sqrt(2), sp.sqrt(3)]) * self.symbolic_length
     
     def determine_correct_symbolic_line_load(self, line_load_string):
         q_0 = sp.symbols("q_0")
+        x_i = sp.symbols(f"x_{self.beam_index}")
         l = self.length
         if line_load_string == "":
             return 0
         elif line_load_string == "constant":
             return q_0
         elif line_load_string == "linear_ascending":
-            return q_0/l*sp.symbols("x")
+            return q_0/l*x_i
         elif line_load_string == "linear_descending":
-            return q_0*(1-sp.symbols("x")/l)
+            return q_0*(1-x_i/l)
 
-    
+    def calc_ansatz_for_ODE_of_beam(self, line_load):
+        x_i = sp.symbols(f"x_{self.beam_index}")
+        self.line_load = self.determine_correct_symbolic_line_load(line_load)
+        self.shear_force = sp.integrate(self.line_load, x_i)
+        self.moment = sp.integrate(self.shear_force, x_i)
+        self.angle_phi = sp.integrate(self.moment, x_i)
+        self.deflection = sp.integrate(self.angle_phi, x_i)
+        
     # i simplified the calculation for the front end - for the calculations one needs to consider the signs and "EI"
-    def set_shear_force_of_x(self):
-        return sp.integrate(self.line_load, sp.symbols("x"))
+    # def set_shear_force_of_x(self):
+    #     return sp.integrate(self.line_load, sp.symbols("x"))
 
-    def set_moment_of_x(self):
-        return sp.integrate(self.shear_force, sp.symbols("x"))
+    # def set_moment_of_x(self):
+    #     return sp.integrate(self.shear_force, sp.symbols("x"))
 
-    def set_angle_phi_of_x(self):
-        return sp.integrate(self.moment, sp.symbols("x"))
+    # def set_angle_phi_of_x(self):
+    #     return sp.integrate(self.moment, sp.symbols("x"))
 
-    def set_deflection_of_x(self):
-        return sp.integrate(self.angle_phi, sp.symbols("x"))
+    # def set_deflection_of_x(self):
+    #     return sp.integrate(self.angle_phi, sp.symbols("x"))
     # def set_shear_force_of_x(self):
     #     """this method calculates the shear force of x by integration of the line load"""
     #     shear_force = []
@@ -1410,23 +1003,24 @@ class Beam(Truss):
     #     deflection.insert(0, 1 / (sp.symbols("E") * sp.symbols("I")))
     #     return deflection
 
-    def get_ansatz_of_ode(self, bearing_constraint, index):
-        """this method returns the correct equation of the ansatz of the ode dependent on the constraint of the
-        bearing"""
-        if bearing_constraint and index == 0:
-            ansatz_of_ode = self.shear_force
-        elif bearing_constraint and index == 1:
-            ansatz_of_ode = self.moment
-        elif bearing_constraint and index == 2:
-            ansatz_of_ode = self.angle_phi
-        elif bearing_constraint and index == 3:
-            ansatz_of_ode = self.deflection
-        else:
-            ansatz_of_ode = False
-        return ansatz_of_ode
+    # def get_ansatz_of_ode(self, bearing_constraint, index):
+    #     """this method returns the correct equation of the ansatz of the ode dependent on the constraint of the
+    #     bearing"""
+    #     if bearing_constraint and index == 0:
+    #         ansatz_of_ode = self.shear_force
+    #     elif bearing_constraint and index == 1:
+    #         ansatz_of_ode = self.moment
+    #     elif bearing_constraint and index == 2:
+    #         ansatz_of_ode = self.angle_phi
+    #     elif bearing_constraint and index == 3:
+    #         ansatz_of_ode = self.deflection
+    #     else:
+    #         ansatz_of_ode = False
+    #     return ansatz_of_ode
 
 
 class RigidBeam(Truss):
+    symbolic_length = sp.symbols("a")
     type = "rigid_beam"
     constraints = [True, True, True, True]  # don't know if this is correct, is needed for the calculation
 
@@ -1441,7 +1035,7 @@ class RigidBeam(Truss):
     def set_length(positions):
         """calculates and sets the length of the beam"""
         return sp.nsimplify(abs(positions[0].x_coordinate - positions[1].x_coordinate),
-                            constants=[sp.sqrt(2), sp.sqrt(3)]) * sp.symbols("a")
+                            constants=[sp.sqrt(2), sp.sqrt(3)]) * sp.symbols("a")*sp.Rational(3,2) # multiply by 3/2 so that the default length is "a"
 
     def add_beam(self, new_beam):
         """adds a beam to the beam list"""
@@ -1478,11 +1072,14 @@ class BoundaryConditionSymbol(Connection):
 
     def __init__(self, position_list):
         super().__init__(position_list)
-        self.bc_position = {"position": ""}
-        self.bc_conditions = [{"condition": "Q", "value": []},
-                              {"condition": "M", "value": []},
-                              {"condition": "\\varphi", "value": []},
-                              {"condition": "w", "value": []}]
+        # self.bc_position = {"position": ""}
+        # self.bc_conditions = [{"condition": "Q", "value": []},
+        #                       {"condition": "M", "value": []},
+        #                       {"condition": "\\varphi", "value": []},
+        #                       {"condition": "w", "value": []}]
+        self.eva_pt = "" # evaluation point, is set in set_up_boundary_conditions
+        
+        self.bc_cons = ["Q","M","\\varphi","w"]
 
 
 class FixedBearing(BoundaryConditionSymbol):
@@ -1520,17 +1117,6 @@ class GuidedSupportVertical(BoundaryConditionSymbol):
         super().__init__(position_list)
 
 
-####
-class GuidedSupportAxial(BoundaryConditionSymbol):
-    """this class is for guided supports (Axial) (='Parallelfuehrung')"""
-    constraints = [False, False, True, True]
-    type = "guided_support_Axial"
-
-    def __init__(self, position_list):
-        super().__init__(position_list)
-
-####
-
 class FreeEnd(BoundaryConditionSymbol):
     """this class is for free ends (='freies Ende')"""
     constraints = [True, True, False, False]
@@ -1543,7 +1129,7 @@ class FreeEnd(BoundaryConditionSymbol):
 class TorsionalSpring(Connection):
     """this class is for torsional springs (='Drehfeder')"""
     constraints = [False, False, True, False]
-    spring_constant = sp.symbols("k_phi")
+    spring_constant = sp.symbols("k_\\varphi")
     type = "torsional_spring"
 
     def __init__(self, position_list):
@@ -1565,7 +1151,7 @@ class SingleMoment(Connection):
     constraints = [False, False, False,
                    False]  # I'm not sure if this is correct, the variable is needed for the calculation of the solution (disabled)
     type = "single_moment"
-
+    symbol = sp.symbols("M")
     def __init__(self, position_list, positive):
         super().__init__(position_list)
         self.positive = positive  # True = counter-clockwise, False = clockwise
@@ -1576,6 +1162,7 @@ class SingleForce(Connection):
     constraints = [False, False, False,
                    False]  # I'm not sure if this is correct, the variable is needed for the calculation of the solution (disabled)
     type = "single_force"
+    symbol = sp.symbols("F")
 
     def __init__(self, position_list, positive):
         super().__init__(position_list)
@@ -1597,11 +1184,12 @@ class MatchingConditionSymbol(Connection):
 
     def __init__(self, position_list):
         super().__init__(position_list)
-        self.mc_position_minus = {"position": "", "index": ""}
-        self.mc_minus_is_negative_cross_section = True
+        # self.mc_position_minus = {"position": "", "index": ""}
+        # self.mc_minus_is_negative_cross_section = True
 
-        self.mc_position_plus = {"position": ""}
-        self.mc_plus_is_positive_cross_section = True
+        # self.mc_position_plus = {"position": ""}
+        # self.mc_plus_is_positive_cross_section = True
+        self.eva_pt = ["", ""] # evaluation point, is set in set_up_matching_conditions, # 0: negative cross section 1: positive cross section
         self.mc_position = [{"position": "", "index": ""}, {"position": "", "index": ""}] # 0: negative cross section 1: positive cross section
         self.cross_sections_default = [True, True] # 0: negative cross section 1: positive cross section
 
@@ -1614,8 +1202,17 @@ class MatchingConditionSymbol(Connection):
                                      {"condition": "M", "value": []},
                                      {"condition": "\\varphi", "value": []},
                                      {"condition": "w", "value": []}]]
-        self.with_bearing = False
+        self.mc_cons = [[{"condition": "Q", "value": []},
+                         {"condition": "M", "value": []},
+                         {"condition": "\\varphi", "value": []},
+                         {"condition": "w", "value": []}],
+                        [{"condition": "Q", "value": []},
+                         {"condition": "M", "value": []},
+                         {"condition": "\\varphi", "value": []},
+                         {"condition": "w", "value": []}]]
+        self.with_bearing = [False, False]
         self.beam_direction = [None, None] # is needed inter alia for displacement conditions
+        self.rigid_lever = "" # needed for the matching conditions of bearing connections
 
 
 class Joint(MatchingConditionSymbol):
@@ -1672,6 +1269,13 @@ class RigidBeamMC(MatchingConditionSymbol):
     def __init__(self, position_list, rigid_right):
         super().__init__(position_list)
         self.rigid_right = rigid_right
+        self.length = self.set_length(position_list)
+        
+    @staticmethod
+    def set_length(positions):
+        """calculates and sets the length of the beam"""
+        return sp.nsimplify(abs(positions[0].x_coordinate - positions[1].x_coordinate),
+                            constants=[sp.sqrt(2), sp.sqrt(3)]) * sp.symbols("a")*sp.Rational(3,2) # multiply by 3/2 so that the default length is "a"
 
 
 class Position:
@@ -1699,3 +1303,482 @@ class Position:
     def add_connection(self, new_connection):
         """adds a connection (='Connection') to the connection list"""
         self.connection_list.append(new_connection)
+        
+def determine_position(beam, bond):
+    """this function determines 'where we are' considering the beam and the bond"""
+    
+    rigid = False
+    rigid_beam = None
+    position = None
+    position_intersection = [pos for pos in beam.position_list if pos in bond.position_list]
+    if not position_intersection:  # there is a rigid beam between the bond and the beam
+        for posi in bond.position_list:
+            for con in posi.connection_list:
+                if isinstance(con, RigidBeam):
+                    other_pos = [po for po in con.position_list if po not in bond.position_list][0]
+                    if any(other_pos == p for p in beam.position_list):
+                        rigid_beam = con
+                        rigid = True
+                        position_int = [rpos for rpos in beam.position_list if rpos in rigid_beam.position_list]
+                        if position_int:
+                            position = position_int[0]
+                        break
+    else:
+        position = position_intersection[0]
+
+    if beam.coordinate_system_position:
+        i = 0
+    else:
+        i = 1
+
+    if position == beam.position_list[i]:
+        x_position = 0
+        sign_cross_section = True  # positive cross section; default "sign" is positive = True
+    else:
+        x_position = beam.length
+        sign_cross_section = False  # negative cross section; default "sign" is negative = False
+    
+    return x_position, sign_cross_section, position, i, rigid, rigid_beam
+    
+    
+def determine_boundary_conditions(beam, bond):
+    """this function determines the boundary conditions of the committed bond at the committed beam"""
+    
+    x_position, sign_cross_section, position, _, _, _ = determine_position(beam, bond)
+    
+    bond.eva_pt = f"(x_{beam.beam_index}={x_position})"
+    for index, entry in enumerate(bond.constraints):
+        if entry:
+            bond.bc_cons[index] += f"{bond.eva_pt}"
+
+    for connection in position.connection_list:
+        if not connection.in_condition_considered:
+            connection.in_condition_considered = True
+            if isinstance(connection, RigidBeam):
+                if len(position.bond_list) > 0:  # rigid beam is "outside"
+                    for pos in connection.position_list:
+                        for con in pos.connection_list:
+                            if not con.in_condition_considered:
+                                con.in_condition_considered = True
+                                if isinstance(con, LinearSpring):
+                                    if position != pos:
+                                        bond.bc_cons[1] += f"{sign_string(not sign_cross_section)}{con.spring_constant}\\,\\varphi{bond.eva_pt}{{{connection.length}}}^2"
+                                elif isinstance(con, SingleForce):
+                                    if position != pos:
+                                        if all([con.positive, sign_cross_section]) or all([con.positive, not sign_cross_section]):
+                                            sign_force = True
+                                        else:
+                                            sign_force = False
+                                        if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
+                                            sign_force = not sign_force 
+                                        bond.bc_cons[1] += f"{sign_string(sign_force)}{con.symbol}\\,{connection.length}"
+                                        
+                                else:
+                                    extend_condition(bond, con, beam, sign_cross_section)
+                else:  # rigid beam is "inside"
+                    bond.bc_cons[1] += f"{sign_string((not sign_cross_section))}Q{bond.eva_pt}\\,{connection.length}"
+                    bond.bc_cons[3] += f"{sign_string((sign_cross_section))}{connection.length}\\,\\varphi{bond.eva_pt}"
+                    for pos in connection.position_list:
+                        for con in pos.connection_list:
+                            if not con.in_condition_considered:
+                                con.in_condition_considered = True
+                                if isinstance(con, LinearSpring):
+                                    if position == pos:
+                                        bond.bc_cons[1] += f"{sign_string(True)}{con.spring_constant}\\,w{bond.eva_pt}\\,{connection.length}"
+                                elif isinstance(con, SingleForce):
+                                    if position == pos:
+                                        if all([con.positive, sign_cross_section]) or all([con.positive, not sign_cross_section]):
+                                            sign_force = False
+                                        else:
+                                            sign_force = True
+                                        if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
+                                            sign_force = not sign_force 
+                                        bond.bc_cons[1] += f"{sign_string(sign_force)}{con.symbol}\\,{connection.length}"
+                                else:
+                                    extend_condition(bond, con, beam, sign_cross_section)
+            else:
+                extend_condition(bond, connection, beam, sign_cross_section)
+
+
+def extend_condition(bond, connection, beam, sign_cross_section):
+    if isinstance(connection, TorsionalSpring):
+        bond.bc_cons[1] += f"{sign_string((not sign_cross_section))}{connection.spring_constant}\\,\\varphi{bond.eva_pt}"
+    elif connection.type == "linear_spring":
+        bond.bc_cons[0] += f"{sign_string((not sign_cross_section))}{connection.spring_constant}\\,w{bond.eva_pt}"
+    elif isinstance(connection, SingleMoment):
+        if not sign_cross_section:  # the single moment is subtracted at the negative cross section
+            sign_moment = False
+        else:  # the single moment is added at the positive cross section
+            sign_moment = True
+        if not beam.coordinate_system_position:  # the sign needs to be changed, when the coordinate system is on the other side
+            sign_moment = not sign_moment  
+        if not connection.positive:  # the sign needs to be changed, when the moment is negative
+            sign_moment = not sign_moment 
+        if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
+            sign_moment = not sign_moment 
+        bond.bc_cons[1] += f"{sign_string(sign_moment)}{connection.symbol}"
+    elif isinstance(connection, SingleForce):
+        if not sign_cross_section:  # the single force is subtracted at the negative cross section
+            sign_force = False
+        else:
+            sign_force = True
+        if not connection.positive:  # the sign needs to be changed, when the force is negative
+            sign_force = not sign_force
+        if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
+            sign_force = not sign_force 
+        bond.bc_cons[0] += f"{sign_string(sign_force)}{connection.symbol}"
+
+
+def determine_matching_conditions(beam, bond):
+    """this function determines the matching conditions of the committed bond at the committed beam"""
+        
+    cross_section_is_default = True
+    x_position, sign_cross_section, position, i, rigid, rigid_beam = determine_position(beam, bond)
+
+    if len(bond.position_list)>1 and not bond.type == "rigid_beam_MC":
+        if beam.position_list[0].z_coordinate == bond.position_list[0].z_coordinate and beam.position_list[0].x_coordinate >= bond.position_list[0].x_coordinate:
+            cross_section_is_default = False  
+            if x_position == 0:
+                sign_cross_section = False                 
+            else:
+                sign_cross_section = True
+                                    
+        if beam.position_list[0].z_coordinate == bond.position_list[1].z_coordinate and beam.position_list[0].x_coordinate < bond.position_list[1].x_coordinate:
+            cross_section_is_default = False
+            if x_position == 0:
+                sign_cross_section = False
+            else:
+                sign_cross_section = True                  
+    else:
+        if x_position == 0:
+            sign_cross_section = True
+        else:
+            sign_cross_section = False 
+
+    id_mc = int(sign_cross_section) # 0 is the negative cross section, 1 is the positive cross section
+
+    if not beam.coordinate_system_position:
+        cross_section_is_default = not cross_section_is_default
+        id_mc = not id_mc
+    if not beam.coordinate_system_orientation:
+        cross_section_is_default = not cross_section_is_default
+        
+    bond.cross_sections_default[id_mc] = cross_section_is_default
+    bond.mc_position[id_mc]["position"] = sp.latex(x_position)
+    bond.mc_position[id_mc]["index"] = (beam.beam_index)
+    bond.eva_pt[id_mc] = f"(x_{beam.beam_index}={x_position})"
+
+    # is needed for some of the matching conditions that are set in the frontend
+    if bond.type == "rigid_beam_MC":
+        bond.beam_direction[0] = bond.beam_list[0].coordinate_system_orientation
+        bond.beam_direction[1] = bond.beam_list[1].coordinate_system_orientation
+    else:
+        if len(bond.position_list)>1:
+            if position.z_coordinate == bond.position_list[0].z_coordinate:
+                bond.beam_direction[0] = beam.coordinate_system_orientation
+            else:
+                bond.beam_direction[1] = beam.coordinate_system_orientation
+        else:
+            if len(bond.beam_list)>1:
+                if bond.beam_list[1].position_list[0].x_coordinate >= beam.position_list[0].x_coordinate:
+                    bond.beam_direction[0] = beam.coordinate_system_orientation
+                else:
+                    bond.beam_direction[1] = beam.coordinate_system_orientation
+            else:
+                if beam.position_list[0].x_coordinate < bond.position_list[0].x_coordinate:
+                    bond.beam_direction[0] = beam.coordinate_system_orientation
+                else:
+                    bond.beam_direction[1] = beam.coordinate_system_orientation
+    
+
+    for index, entry in enumerate(bond.constraints_frontend):
+        if entry:
+            bond.matching_conditions[id_mc][index]["value"].append(str(0))
+            if len(bond.mc_cons[id_mc][index]["condition"])<2: # due to bearing connection
+                bond.mc_cons[id_mc][index]["condition"] += f"{bond.eva_pt[id_mc]}"
+            bond.mc_cons[id_mc][index]["value"] = "&="
+    print(bond.beam_direction)
+    if isinstance(bond, LinearSpringMC): # in order to define the spring force, the deflection is set with the evaluation point and the sign of the beam direction
+        bond.mc_cons[id_mc][3]["condition"] = f"{translate_boolean(bond.beam_direction[id_mc])}w{bond.eva_pt[id_mc]}"
+        
+    if bond.type == "rigid_beam_MC": # this is a special matching condition
+        if position == bond.position_list[1]: # one needs to account for the change of the shear force and the displacement, which is incorporated on the "right side" of the rigid beam
+            bond.matching_conditions[id_mc][1]["value"].append([not sign_cross_section, "rigid_beam"])
+            # append the moment due to the shear force on the "positive cross section" to the moment condition (of the positive cross section)
+            bond.mc_cons[1][1]["condition"] += f"{sign_string((not sign_cross_section))}Q{bond.eva_pt[1]}\\,{bond.length}"
+            for pos in bond.position_list:
+                if pos.beam_list:
+                    if pos.beam_list[0] != beam:
+                        other_beam = pos.beam_list[0]
+            if other_beam.coordinate_system_orientation:
+                bond.matching_conditions[id_mc][3]["value"].append([True, "rigid_beam"])        
+            else:
+                bond.matching_conditions[id_mc][3]["value"].append([False, "rigid_beam"])
+            bond.mc_cons[1][3]["condition"] += f"{sign_string(other_beam.coordinate_system_orientation)}{bond.length}\\varphi{bond.eva_pt[1]}"
+
+    for connection in position.connection_list:
+        if not connection.in_condition_considered:
+            connection.in_condition_considered = True
+            if connection.type == "linear_spring":                     
+                if not id_mc: # negative cross section, position_list[0] in bond
+                    sign = True # the spring force is always showing "up" (against default z)
+                else:
+                    sign = False
+                if not beam.coordinate_system_orientation:
+                    sign = not sign # the sign needs to be changed, when the orientation is flipped
+                bond.matching_conditions[id_mc][0]["value"].append([sign, connection.type])
+                bond.mc_cons[id_mc][0]["condition"] += f"{sign_string((sign))}{connection.spring_constant}\\,w{bond.eva_pt[id_mc]}"
+                
+                # if the bond is a rigid beam as matching condition, a linear spring is also (and only on the right side of the rigid beam) accounted for the moment condition
+                if bond.type == "rigid_beam_MC" and position == bond.position_list[1]: # the appearing spring force is accounted a the shear force and must not be incorporated for the moment condition - the reference point is the "left" side of the rigid beam
+                    bond.matching_conditions[id_mc][1]["value"].append([not sign, connection.type])
+                    bond.mc_cons[id_mc][1]["condition"] += f"{sign_string((not sign))}{connection.spring_constant}\\,w{bond.eva_pt[id_mc]}\\,{bond.length}"
+
+            elif connection.type == "torsional_spring":
+                # i think the following is not necessary anymore because one cannot assign properly the torsional spring to one of the two neighbouring beams at a bearing as matching condition (there is an error raise in system.py)
+                # if bond.type == "bearing_MC":
+                #     if cross_section:
+                #         bond.matching_conditions[id_mc][1]["value"].append([False, connection.type])
+                #     else:
+                #         bond.matching_conditions[id_mc][1]["value"].append([True, connection.type])
+                # else:
+                if not id_mc:
+                    sign = True # the default for the negative cross section is a positive moment
+                else:
+                    sign = False # the default for the positive cross section is a negative moment
+                if not cross_section_is_default:
+                    sign = not sign
+                if not beam.coordinate_system_orientation:
+                    sign = not sign # the sign needs to be changed, when the orientation is flipped (due to cross_section_default)
+                bond.matching_conditions[id_mc][1]["value"].append([sign, connection.type])
+                bond.mc_cons[id_mc][1]["condition"] += f"{sign_string((sign))}{connection.spring_constant}\\,\\varphi{bond.eva_pt[id_mc]}"
+
+            elif connection.type == "single_moment":
+                if not id_mc:
+                    sign = False
+                else:
+                    sign = True
+                if not cross_section_is_default:
+                    sign = not sign
+                if not beam.coordinate_system_position:
+                    sign = not sign # the sign needs to be changed, when the coordinate system is on the other side
+                if not connection.positive:
+                    sign = not sign # the sign needs to be changed, when the moment is negative
+                bond.matching_conditions[id_mc][1]["value"].append([sign, connection.type])
+                bond.mc_cons[id_mc][1]["condition"] += f"{sign_string(sign)}{connection.symbol}"
+
+            elif connection.type == "single_force":
+                if not id_mc:
+                    sign = False
+                else:
+                    sign = True
+                if not connection.positive:
+                    sign = not sign
+                bond.matching_conditions[id_mc][0]["value"].append([sign, connection.type])
+                bond.mc_cons[id_mc][0]["condition"] += f"{sign_string(sign)}{connection.symbol}"
+                # if the bond is a rigid beam as matching condition, a linear spring is also (and only on the right side of the rigid beam) accounted for the moment condition
+                if bond.type == "rigid_beam_MC" and position == bond.position_list[1]: # the appearing spring force is accounted a the shear force and must not be incorporated for the moment condition - the reference point is the "left" side of the rigid beam
+                    bond.matching_conditions[id_mc][1]["value"].append([not sign, connection.type])
+                    bond.mc_cons[id_mc][1]["condition"] += f"{sign_string((not sign))}{connection.symbol}\\,{bond.length}"
+
+            elif connection.type == "rigid_beam":
+                if rigid:
+                    if bond.type == "bearing_MC": # the conditions of bearing MC change if there is a rigid beam
+                        bond.matching_conditions[0][2]["value"].append(str(0))
+                        bond.matching_conditions[1][2]["value"].append(str(0))
+                    if bond.type == "linear_spring_MC":  # due to the implementation in the frontend, this is necessary for the linear spring MC
+                        bond.matching_conditions[id_mc][3]["value"].append(str(0))
+                    
+                    if beam.position_list[i] == rigid_beam.position_list[(not i)]:
+                        sign_rigid = False
+                    else:
+                        sign_rigid = True
+
+                    bond.matching_conditions[id_mc][1]["value"].append([sign_rigid, connection.type])
+                    # append the moment due to the shear force to the moment condition
+                    bond.mc_cons[id_mc][1]["condition"] += f"{sign_string((sign_rigid))}Q{bond.eva_pt[id_mc]}\\,{connection.length}"
+                    
+                    if not beam.coordinate_system_orientation: # this is necessary since the orientation of the angle is changing
+                        sign_rigid = not sign_rigid
+                    
+                    bond.matching_conditions[id_mc][3]["value"].append([not sign_rigid, connection.type])
+                    # append the deflection change due to the rigid beam to the deflection condition
+                    bond.mc_cons[id_mc][3]["condition"] += f"{sign_string((not sign_rigid))}{connection.length}\\,\\varphi{bond.eva_pt[id_mc]}"
+                    
+                    for pos in connection.position_list:
+                        for con in pos.connection_list:
+                            if not con.in_condition_considered:
+                                con.in_condition_considered = True
+                                
+                                if con.type == "linear_spring":
+                                    if pos == position: # the linear spring is at the beam (and separated from the bond via the rigid beam)
+                                        
+                                        addition_for_shear_force = ""
+                                        # the determination of the sign was taken from above
+                                        if not id_mc: # negative cross section, position_list[0] in bond
+                                            sign_linear_spring = True # the spring force is always showing "up" (against default z)
+                                        else:
+                                            sign_linear_spring = False
+                                        if not beam.coordinate_system_orientation:
+                                            sign_linear_spring = not sign_linear_spring # the sign needs to be changed, when the orientation is flipped
+                                        
+                                        # it seems that the moment is always positive
+                                        bond.matching_conditions[id_mc][1]["value"].append([True, con.type])
+                                        # append the shear force due to the linear spring to the shear force condition
+                                        bond.mc_cons[id_mc][0]["condition"] += f"{sign_string(sign_linear_spring)}{con.spring_constant}\\,w{bond.eva_pt[id_mc]}"
+                                        # append the moment due to the linear spring to the moment condition
+                                        bond.mc_cons[id_mc][1]["condition"] += f"{sign_string(True)}{con.spring_constant}\\,w{bond.eva_pt[id_mc]}\\,{connection.length}"
+                                    else: # the linear spring is directly at the bond
+                                        addition_for_shear_force = "_rigid" 
+
+                                        sign_linear_spring = sign_rigid
+                                        if not beam.coordinate_system_orientation:  # the change of the sign with the following two ifs was trial and error
+                                            sign_linear_spring = not sign_linear_spring
+                                        if not beam.coordinate_system_position:
+                                            sign_linear_spring = not sign_linear_spring
+                                        # append the shear force due to the linear spring to the shear force condition
+                                        bond.mc_cons[id_mc][0]["condition"] += f"{sign_string(sign_linear_spring)}{con.spring_constant}\\,\\left[{sign_string((bond.beam_direction[id_mc]))}{bond.mc_cons[id_mc][3]['condition']}\\right]"
+
+                                    bond.matching_conditions[id_mc][0]["value"].append([sign_linear_spring, con.type+addition_for_shear_force])
+                                    
+                                elif con.type == "single_force":
+                                    if not id_mc:
+                                        sign_force = False
+                                    else:
+                                        sign_force = True
+                                    if not con.positive:
+                                        sign_force = not sign_force
+                                    bond.matching_conditions[id_mc][0]["value"].append([sign_force, con.type])
+                                    bond.mc_cons[id_mc][0]["condition"] += f"{sign_string(sign_force)}{con.symbol}"
+
+                                    sign_moment = not con.positive
+                                    if not beam.coordinate_system_orientation:
+                                        sign_moment = not sign_moment
+                                    if pos == position:
+                                        bond.matching_conditions[id_mc][1]["value"].append([sign_moment, con.type])
+                                        bond.mc_cons[id_mc][1]["condition"] += f"{sign_string(sign_moment)}{con.symbol}\\,{connection.length}"
+                                elif con.type == "torsional_spring":
+                                    sign_torsional_spring = sign_rigid
+                                    if not beam.coordinate_system_orientation:  # is necessary due to the change of the sign above (with not beam.coordinate_system_orientation)
+                                        sign_torsional_spring = not sign_torsional_spring
+                                    bond.matching_conditions[id_mc][1]["value"].append([sign_torsional_spring, con.type])
+                                    bond.mc_cons[id_mc][1]["condition"] += f"{sign_string((sign_torsional_spring))}{con.spring_constant}\\,\\varphi{bond.eva_pt[id_mc]}"
+                                elif con.type == "single_moment":
+                                    if not id_mc:
+                                        sign_moment = False
+                                    else:
+                                        sign_moment = True
+                                    if not cross_section_is_default:
+                                        sign_moment = not sign_moment
+                                    if not beam.coordinate_system_position:
+                                        sign_moment = not sign_moment # the sign needs to be changed, when the coordinate system is on the other side
+                                    if not con.positive:
+                                        sign_moment = not sign_moment # the sign needs to be changed, when the moment is negative
+
+                                    bond.matching_conditions[id_mc][1]["value"].append([sign_moment, con.type])
+                                    bond.mc_cons[id_mc][1]["condition"] += f"{sign_string(sign_moment)}{con.symbol}"
+
+                                elif con.type == "bearing_connection":
+                                    # determine sign based on coordinate system position of "other" beam
+                                    bond.with_bearing[id_mc] = True
+                                    # reset moment and deflection condition as they are formed anew
+                                    # bond.mc_cons[id_mc][1]["condition"] = f"M{bond.eva_pt[id_mc]}"
+                                    bond.mc_cons[id_mc][3]["condition"] = f"{sign_string(bond.beam_direction[id_mc])}w{bond.eva_pt[id_mc]}"
+                                    for pos in bond.position_list:
+                                        if pos.beam_list:
+                                            if pos.beam_list[0] != beam:
+                                                other_beam = pos.beam_list[0]
+                                        else:
+                                            for conne in pos.connection_list:
+                                                if isinstance(conne, RigidBeam):
+                                                    if conne.beam_list[0] != beam:
+                                                        other_beam = conne.beam_list[0]
+                                    if bond.type == "linear_spring_MC":
+                                        if beam.coordinate_system_position:
+                                            sign_moment = not sign_rigid
+                                        else:
+                                            sign_moment = sign_rigid
+                                        bond.matching_conditions[id_mc][1]["value"].append([sign_moment, con.type])
+                                        # bond.matching_conditions[id_mc][1]["value"].remove([sign_rigid, connection.type])
+                                    else:
+                                        if beam.coordinate_system_orientation:
+                                            sign_moment = other_beam.coordinate_system_position
+                                        else:
+                                            sign_moment = not other_beam.coordinate_system_position
+                                        if not other_beam.coordinate_system_orientation:
+                                            sign_moment = not sign_moment
+                                        if not id_mc:
+                                            bond.matching_conditions[id_mc][1]["value"].append([sign_moment, con.type])
+                                            bond.mc_cons[id_mc][1]["condition"] += f"{sign_string(sign_moment)}Q{get_eva_pt_for_other_beam(bond, other_beam)}\\,{connection.length}"
+                                        else:
+                                            bond.matching_conditions[id_mc][1]["value"].append([not sign_moment, con.type])
+                                            bond.mc_cons[id_mc][1]["condition"] += f"{sign_string((not sign_moment))}Q{bond.eva_pt[not id_mc]}\\,{connection.length}"
+                                    if beam.coordinate_system_orientation:
+                                        bond.matching_conditions[id_mc][1]["value"].remove([sign_rigid, connection.type])  # the moment condition is different, therefore it is removed
+                                    else:
+                                        bond.matching_conditions[id_mc][1]["value"].remove([not sign_rigid, connection.type])  # the moment condition is different, therefore it is removed
+                                    
+                                    # i did not have another look on the determination of the sign for the displacement - it looked ok
+                                    if bond.type == "linear_spring_MC":
+                                        bond.rigid_lever = f"{connection.length}"
+                                        bond.matching_conditions[id_mc][3]["value"].append([not sign_rigid, con.type])
+                                        # if not id_mc:
+                                        #     bond.mc_cons[id_mc][3]["condition"] = f"{sign_string((not sign_rigid))}{connection.length}\\varphi{bond.eva_pt[id_mc]}"
+                                        # else:
+                                        bond.mc_cons[id_mc][3]["condition"] = f"{translate_boolean((not sign_rigid))}{connection.length}\\varphi{bond.eva_pt[id_mc]}"
+                                    else:
+                                        bond.matching_conditions[id_mc][3]["value"].append([sign_rigid, con.type])
+                                        if id_mc:
+                                            bond.mc_cons[not id_mc][3]["condition"] += f"{sign_string((sign_rigid))}{connection.length}\\,\\varphi{bond.eva_pt[id_mc]}"
+                                        else:
+                                            print(bond.mc_cons[not id_mc][3]["condition"])
+                                            bond.mc_cons[not id_mc][3]["condition"] += f"{get_eva_pt_for_other_beam(bond, other_beam)}{sign_string((sign_rigid))}{connection.length}\\,\\varphi{bond.eva_pt[id_mc]}"
+                                    bond.matching_conditions[id_mc][3]["value"].remove([not sign_rigid, connection.type])  # the deflection condition is different, therefore it is removed
+
+                                    
+                                elif con.type == "rigid_beam": # i think this is just necessary for the joint
+                                    con.in_condition_considered = False 
+                else:
+                    connection.in_condition_considered = False 
+                    
+                    
+def sign_string(boolean):
+    if boolean:
+        return "+"
+    else:
+        return "-"
+def translate_boolean(boolean):
+    if boolean:
+        return ""
+    else:
+        return "-"
+
+
+def get_eva_pt_for_other_beam(bond, beam):
+        position = None
+        position_intersection = [pos for pos in beam.position_list if pos in bond.position_list]
+        if not position_intersection:  # there is a rigid beam between the bond and the beam
+            for posi in bond.position_list:
+                for con in posi.connection_list:
+                    if isinstance(con, RigidBeam):
+                        other_pos = [po for po in con.position_list if po not in bond.position_list][0]
+                        if any(other_pos == p for p in beam.position_list):
+                            rigid_beam = con
+                            position_int = [rpos for rpos in beam.position_list if rpos in rigid_beam.position_list]
+                            if position_int:
+                                position = position_int[0]
+                            break
+        else:
+            position = position_intersection[0]
+
+        if beam.coordinate_system_position:
+            i = 0
+        else:
+            i = 1
+        
+        if position == beam.position_list[i]:
+            x_position = 0
+        else:
+            x_position = beam.length
+            
+        return f"(x_{beam.beam_index}={x_position})"

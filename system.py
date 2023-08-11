@@ -1,69 +1,68 @@
 import sympy as sp
 from classes import BearingConnection, FreeEnd, RigidBeamMC, Position, Beam, RigidBeam, FixedBearing, FloatingBearing, RigidSupport, GuidedSupportVertical, LinearSpring, SingleMoment, TorsionalSpring, Joint, RigidConnection, LinearSpringMC, FixedBearingMC, FloatingBearingMC, MatchingConditionSymbol, SingleForce
-from exceptions import NoValidBondsInSystemError, BondsAtPositionError, ToLessBeamsAtMatchingConditionPositionError, RigidBeamEndsInNothingError, TorsionalSpringAtJointError, JointAndFreeEndConfusionError, DegreeOfIndeterminacyError
+from exceptions import NoValidBondsInSystemError, BondsAtPositionError, ToLessBeamsAtMatchingConditionPositionError, RigidBeamEndsInNothingError, TorsionalSpringAtJointError, JointAndFreeEndConfusionError, DegreeOfIndeterminacyError, GeneralUserError
 
 
 def create_new_beam(start_and_end_coordinates, line_load, type_string, coordinate_system_position, coordinate_system_orientation, system):
-    positions_for_beam = []
-
+    """this function either creates a beam or rigid beam based on the committed values"""
+    
+    position_list = []
     for position in start_and_end_coordinates:
         new_position = Position(position)
         new_position = system.add_position(new_position)
-        positions_for_beam.append(new_position)
-    new_beam = create_either_beam_or_rigid_beam(positions_for_beam, line_load, type_string, coordinate_system_position, coordinate_system_orientation)
+        position_list.append(new_position)
+        
+    new_beam = create_either_beam_or_rigid_beam(position_list, type_string, coordinate_system_position, coordinate_system_orientation)
    
     if isinstance(new_beam, Beam):
         system.add_beam(new_beam)
-        new_beam.beam_index = str(system.beam_list.index(new_beam) + 1)
-        set_correct_index_for_variable(new_beam)
+        new_beam.beam_index = (system.beam_list.index(new_beam) + 1)
+        new_beam.calc_ansatz_for_ODE_of_beam(line_load)
+
+        for position in position_list:
+            position.add_beam(new_beam)
 
     else:  # rigid beams are gathered in the connection list
         system.add_connection(new_beam)
-
-    if isinstance(new_beam, Beam):
-        for position in positions_for_beam:
-            position.add_beam(new_beam)
-    else:
-        for position in positions_for_beam:
+        
+        for position in position_list:
             position.add_connection(new_beam)
 
 
-def set_correct_index_for_variable(beam):
-        if beam.line_load != 0:
-            beam.line_load = beam.line_load.subs(sp.symbols("x"), sp.symbols("x_"+str(beam.beam_index)))
-            beam.shear_force = beam.shear_force.subs(sp.symbols("x"), sp.symbols("x_"+str(beam.beam_index)))
-            beam.moment = beam.moment.subs(sp.symbols("x"), sp.symbols("x_"+str(beam.beam_index)))
-            beam.angle_phi = beam.angle_phi.subs(sp.symbols("x"), sp.symbols("x_"+str(beam.beam_index)))
-            beam.deflection = beam.deflection.subs(sp.symbols("x"), sp.symbols("x_"+str(beam.beam_index)))
-
-
-def create_either_beam_or_rigid_beam(position_list_for_beam, line_load, type_string, coordinate_system_position, coordinate_system_orientation):
+def create_either_beam_or_rigid_beam(position_list_for_beam, type_string, coordinate_system_position, coordinate_system_orientation):
+    """this function creates an instance of the object Beam or RigidBeam based on the committed type string"""
+    
     if type_string == "straight_beam":
-        new_beam = Beam(position_list_for_beam, line_load, coordinate_system_position, coordinate_system_orientation)
+        new_beam = Beam(position_list_for_beam, coordinate_system_position, coordinate_system_orientation)
     else:
         new_beam = RigidBeam(position_list_for_beam)
     return new_beam
 
 
 def create_new_connections_and_bonds(positions, type_string, positive, system):
-    positions_for_connection_or_bond = []
+    """this function either creates connections or bonds based on the committed values"""
+    
+    position_list = []
     for position in positions:
         new_position = Position(position)
         new_position = system.add_position(new_position)
-        positions_for_connection_or_bond.append(new_position)
-    new_connection_or_bond = create_correct_type_of_connection_or_bond(positions_for_connection_or_bond, type_string, positive)
+        position_list.append(new_position)
+        
+    new_connection_or_bond = create_correct_type_of_connection_or_bond(position_list, type_string, positive)
 
     if new_connection_or_bond.bond:
         system.add_bond(new_connection_or_bond)
-        for position in positions_for_connection_or_bond:
+        for position in position_list:
             position.add_bond(new_connection_or_bond)
     else:
         system.add_connection(new_connection_or_bond)
-        for position in positions_for_connection_or_bond:
+        for position in position_list:
             position.add_connection(new_connection_or_bond)
 
 
 def create_correct_type_of_connection_or_bond(position, type_string, positive):
+    """this function creates an instance of the respective bond or connection object based on the committed type string"""
+    
     if type_string == "fixed_bearing":
         new_connection_or_bond = FixedBearing(position)
     elif type_string == "floating_bearing":
@@ -96,10 +95,6 @@ def create_correct_type_of_connection_or_bond(position, type_string, positive):
         new_connection_or_bond = BearingConnection(position, positive)
     elif type_string == "free_end":
         new_connection_or_bond = FreeEnd(position)
-    else:
-        print("This type of connection was not implemented yet. Please check function "
-              "create_correct_type_of_connection_or_bond")
-        new_connection_or_bond = None
     return new_connection_or_bond
 
 
@@ -123,30 +118,37 @@ def create_dependencies(system):
                     bond.add_beam(beam)
 
 
-def determine_MC_bearings(system):
+def determine_MC_bearings_and_MC_rigid_beams(system):
+    """this function determines if floating and/or fixed bearings or rigid beams are 'inside' the system and therefore have effect on matching conditions"""
+    
     MC_bearing_list = []
     for bond in system.bond_list:
-        if bond.type == "floating_bearing" or bond.type == "fixed_bearing":
+        if isinstance(bond, FloatingBearing) or isinstance(bond, FixedBearing):
+            # if at the position of the bearing are more than one beam, it is a MC bearing
             if len(bond.position_list[0].beam_list) > 1:
                 MC_bearing_list.append(bond)
-                # create_MC_bearing(bond, system)
+
+            # if there is a rigid beam at the bearing, check if at the other position is a beam; if yes, the bearing is a MC bearing
             elif len(bond.position_list[0].beam_list) == 1 and bond.position_list[0].connection_list:
-                if isinstance(bond.position_list[0].connection_list[0], RigidBeam):
+                if isinstance(bond.position_list[0].connection_list[0], RigidBeam): # i am not sure if there is a case that a rigid beam is not at connection list position zero
                     rigid = bond.position_list[0].connection_list[0]
                     for pos in rigid.position_list:
                         if pos.x_coordinate != bond.position_list[0].x_coordinate and (len(pos.beam_list) > 0 or len(pos.bond_list) > 0):
                             MC_bearing_list.append(bond)
-                            # create_MC_bearing(bond, system)
-            elif bond.position_list[0].connection_list: # two rigid beams at the bearing
+            
+            # the last case is that there are two rigid beams at the bearing
+            elif bond.position_list[0].connection_list: 
                 rigid_counter = 0
                 for connection in bond.position_list[0].connection_list:
                     if isinstance(connection, RigidBeam):
                         rigid_counter += 1
                 if rigid_counter == 2:
                     MC_bearing_list.append(bond)
+                    
     for bearing in MC_bearing_list:
         create_MC_bearing(bearing, system)
     create_dependencies(system)
+    
     for connection in system.connection_list:
         if isinstance(connection, RigidBeam):
             if len(connection.beam_list) > 1:
@@ -157,26 +159,37 @@ def determine_MC_bearings(system):
 
 
 def create_MC_bearing(bond, system):
-    if bond.type == "fixed_bearing":
+    """this function creates the new instance of the MC bearing and removes the old one from the system"""
+    
+    if isinstance(bond, FixedBearing):
         string = "fixed_bearing_MC"
     else:
         string = "floating_bearing_MC"
+    
     position = bond.position_list[0]
+    
     create_new_connections_and_bonds([[position.x_coordinate, position.z_coordinate]], string, "", system)
+    
     system.bond_list.remove(bond)
     position.bond_list.remove(bond)
+    
     for beam in system.beam_list:
         if any(bond == b for b in beam.bond_list):
             beam.bond_list.remove(bond)
 
 
 def create_MC_rigid_beam(connection, system):
+    """this function creates the new instance of the MC rigid beam and removes the old one from the system"""
+    
     position_0 = connection.position_list[0]
     position_1 = connection.position_list[1]
-    create_new_connections_and_bonds(
-        [[position_0.x_coordinate, position_0.z_coordinate], [position_1.x_coordinate, position_1.z_coordinate]],
-        "rigid_beam_MC", "", system)
+    
+    create_new_connections_and_bonds([[position_0.x_coordinate, position_0.z_coordinate],
+                                      [position_1.x_coordinate, position_1.z_coordinate]],
+                                     "rigid_beam_MC", "", system)
+    
     system.connection_list.remove(connection)
+    
     for position in connection.position_list:
         position.connection_list.remove(connection)
     for beam in system.beam_list:
@@ -185,11 +198,13 @@ def create_MC_rigid_beam(connection, system):
 
 
 def change_bearings_to_connections(system):
-    # this function changes a bearing_MC that is a matching condition symbol to a connection. this may only be done, if there are more than "number of beams -1" matching condition symbols in the bond list!
+    """this function changes a bearing_MC that is a matching condition symbol to a connection. this may only be done, if there are more than "number of beams -1" matching condition symbols in the bond list!"""
+    
     number_matching_condtions = 0
     for bond in system.bond_list:
         if isinstance(bond, MatchingConditionSymbol):
             number_matching_condtions += 1
+            
     if number_matching_condtions > len(system.beam_list) -1:
         for bond in system.bond_list:
             if isinstance(bond, MatchingConditionSymbol):
@@ -199,7 +214,7 @@ def change_bearings_to_connections(system):
                             rigid = position.connection_list[0]
                             for pos in rigid.position_list:
                                 for bd in pos.bond_list:
-                                    if bd.type == "floating_bearing" or bd.type == "fixed_bearing" or bd.type == "bearing_MC" or bd.type == "bearing_MC":
+                                    if isinstance(bd, FloatingBearing) or isinstance(bd, FixedBearing) or isinstance(bd, FloatingBearingMC) or isinstance(bd, FixedBearingMC):
                                         system.bond_list.remove(bd)
                                         pos.bond_list.remove(bd)
                                         for beam in pos.beam_list:
@@ -211,13 +226,13 @@ def change_bearings_to_connections(system):
                                         create_new_connections_and_bonds([[pos.x_coordinate, pos.z_coordinate]], "bearing_connection", forces, system)
 
 def check_positions_of_system(system):
+    """this function checks the positions of the system and raises errors if necessary"""
+    
     for position in system.position_list:
         if not position.bond_list and not any(isinstance(rigid, RigidBeam) for rigid in position.connection_list):
-            raise NoValidBondsInSystemError(
-                "Sie müssen für alle eingefügten Balken auch einen passenden Systemrand oder -übergang einfügen.")
+            raise NoValidBondsInSystemError()
         if len(position.bond_list) > 1:
-            raise BondsAtPositionError(
-                "An einer Position darf nur ein Symbol für einen Systemrand oder -übergang sitzen.")
+            raise BondsAtPositionError()
 
     for bond in system.bond_list:
         if isinstance(bond, MatchingConditionSymbol):
@@ -231,8 +246,7 @@ def check_positions_of_system(system):
                     if any(isinstance(rigid, RigidBeam) for rigid in position.connection_list):
                         rigid_counter += 1
             if len(bond.beam_list) + rigid_counter < 2:
-                raise ToLessBeamsAtMatchingConditionPositionError(
-                    "Übergangselemente müssen an ihren beiden Enden jeweils mit einem Balken verbunden sein.")
+                raise ToLessBeamsAtMatchingConditionPositionError()
         if isinstance(bond, Joint):
             rigid_counter = 0
             for connection in bond.position_list[0].connection_list:
@@ -240,41 +254,58 @@ def check_positions_of_system(system):
                     rigid_counter += 1
             number_of_beams = rigid_counter + len(bond.beam_list)
             if number_of_beams < 2:
-                raise JointAndFreeEndConfusionError(
-                    "Sie haben ein Gelenk, das zwei Balken verbinden sollte, an den Systemrand gesetzt. Tauschen Sie es durch das 'freies Ende'-Symbol aus. Sie finden es bei den Randelementen.")
+                raise JointAndFreeEndConfusionError("Sie haben ein Gelenk, das zwei Balken verbinden sollte, an den Systemrand gesetzt. Tauschen Sie es durch das 'freies Ende'-Symbol aus. Sie finden es bei den Randelementen.")
             for position in bond.position_list:
                 if any(isinstance(con, TorsionalSpring) for con in position.connection_list):
-                    raise TorsionalSpringAtJointError(
-                        "Ein Platzieren von Torsionsfedern an einem Gelenk ist nicht möglich, da sie (zurzeit) nicht eindeutig einem der Balken zugeordnet werden kann.")
+                    raise TorsionalSpringAtJointError("Ein Platzieren von Torsionsfedern an einem Gelenk ist nicht möglich, da sie (zurzeit) nicht eindeutig einem der Balken zugeordnet werden kann.")
         if isinstance(bond, FloatingBearingMC) or isinstance(bond, FixedBearingMC):
             for position in bond.position_list:
                 if any(isinstance(con, TorsionalSpring) for con in position.connection_list):
-                    raise TorsionalSpringAtJointError(
-                        "Ein Platzieren von Torsionsfedern an einem Lager als Übergangselement ist nicht möglich, da sie (zurzeit) nicht eindeutig einem der Balken zugeordnet werden kann.")
+                    raise TorsionalSpringAtJointError("Ein Platzieren von Torsionsfedern an einem Lager als Übergangselement ist nicht möglich, da sie (zurzeit) nicht eindeutig einem der Balken zugeordnet werden kann.")
         if isinstance(bond, FreeEnd):
             if len(bond.beam_list) > 1:
-                raise JointAndFreeEndConfusionError(
-                    "Sie haben ein freies Ende, das am Rand eines Balkens sitzt, inmitten des Systems gesetzt. Tauschen Sie es durch das 'Gelenk'-Symbol aus. Sie finden es bei den Übergangselementen.")
+                raise JointAndFreeEndConfusionError("Sie haben ein freies Ende, das am Rand eines Balkens sitzt, inmitten des Systems gesetzt. Tauschen Sie es durch das 'Gelenk'-Symbol aus. Sie finden es bei den Übergangselementen.")
+        if isinstance(bond, RigidConnection):
+            for connection in bond.position_list[0].connection_list:
+                if isinstance(connection, RigidBeam):
+                    bearing_con1 = False
+                    if any(connec.type == "bearing_connection" for connec in connection.position_list[0].connection_list):
+                        bearing_con1 = True
+                    if any(connec.type == "bearing_connection" for connec in connection.position_list[1].connection_list):
+                        bearing_con1 = True
+            for connection in bond.position_list[1].connection_list:
+                if isinstance(connection, RigidBeam):
+                    bearing_con2 = False
+                    if any(connec.type == "bearing_connection" for connec in connection.position_list[0].connection_list):
+                        bearing_con2 = True
+                    if any(connec.type == "bearing_connection" for connec in connection.position_list[1].connection_list):
+                        bearing_con2 = True
+            if bearing_con1 and bearing_con2:
+                raise GeneralUserError("Diese Übergangsbedingung kann noch nicht abgebildet werden.")
+                
 
     for connection in system.connection_list:
         if isinstance(connection, RigidBeam):
             for position in connection.position_list:
-                if not position.bond_list and not position.beam_list and not position.connection_list:
-                    raise RigidBeamEndsInNothingError(
-                        "An einem starren Balkenteil muss etwas an beiden Enden angreifen.")
+                print(position.bond_list, position.beam_list, position.connection_list)
+                if not position.bond_list and not position.beam_list and len(position.connection_list)<2:
+                    raise RigidBeamEndsInNothingError()
+
 
 def check_degree_of_indeterminacy(system):
+    """this function checks the degree of indeterminacy of the system and raises an error if necessary"""
+    
     equations = len(system.beam_list)*3
     unknowns = 0
 
     for bond in system.bond_list:
-        if any(bond.type == x for x in ["floating_bearing", "rigid_connection", "linear_spring_MC"]):
+        if any(isinstance(bond, x) for x in [FloatingBearing, RigidConnection, LinearSpringMC]):
             unknowns += 1
-        elif any(bond.type == x for x in ["fixed_bearing", "guided_support_vertical", "joint", "fixed_bearing_MC", "floating_bearing_MC" ]):
+        elif any(isinstance(bond, x) for x in [FixedBearing, GuidedSupportVertical, Joint, FixedBearingMC, FloatingBearingMC]):
             unknowns += 2
-        elif bond.type == "rigid_support":
+        elif isinstance(bond, RigidSupport):
             unknowns += 3
-        elif bond.type == "rigid_beam_MC":
+        elif isinstance(bond, RigidBeamMC):
             equations -= 3  # because they connect two beams to be as one
     for connection in system.connection_list:
         if connection.type == "linear_spring" or connection.type == "torsional_spring":
@@ -283,23 +314,7 @@ def check_degree_of_indeterminacy(system):
             unknowns += connection.forces
           
     if (unknowns-equations<0):
-        raise DegreeOfIndeterminacyError("Das eingegebene System ist statisch unterbestimmt (n_s<0). Eine Berechnung ist nicht zielführend.")
-      
-
-
-def data_for_ansatz_ode(system):
-    data_list = []
-
-    for beam in system.beam_list:
-        eiw4 = sp.latex(beam.line_load)
-        eiw3 = sp.latex(beam.shear_force)
-        eiw2 = sp.latex(beam.moment)
-        eiw1 = sp.latex(beam.angle_phi)
-        eiw = sp.latex(beam.deflection)
-
-        data_list.append([eiw4, eiw3, eiw2, eiw1, eiw])
-        print("Data entry:", [eiw4, eiw3, eiw2, eiw1, eiw])
-    return data_list
+        raise DegreeOfIndeterminacyError()
 
 
 def data_for_boundary_conditions(system):
@@ -322,84 +337,6 @@ def data_for_boundary_conditions(system):
         # data_list.append(data)
     return data_list
 
-def data_for_boundary_conditions_sympy(system):
-    data_list = []
-    for bond in system.bond_list:
-        list_conditions = []
-        if not isinstance(bond, MatchingConditionSymbol):
-            if bond.beam_list:
-                beam_index = bond.beam_list[0].beam_index
-            else:
-                beam_index = bond.position_list[0].connection_list[0].beam_list[0].beam_index
-            for condition in bond.bc_conditions:
-                if condition["value"]:
-                    fun = get_function_evaluated_at(condition["condition"], beam_index, bond.bc_position["position"])
-                    value = get_value_of_condition(condition["value"], condition["condition"], beam_index, bond.bc_position["position"])
-
-                    if sp.latex(value) != "0":
-                        if sp.latex(value)[0] == "-":
-                            sign = " "
-                        else:
-                            sign = " + "
-                        value = sign+sp.latex(value, mul_symbol='\,')
-                    else:
-                        value = ""
-                        
-                    list_conditions.append(sp.latex(fun)+value+" = 0")
-        data_list.append(list_conditions)
-    return data_list
-
-def get_function_evaluated_at(condition, beam_number, evaluation):
-    x_i = sp.symbols("x_"+str(beam_number))
-
-    if condition == "w":
-        function = sp.Function("w")
-    elif condition == "\\varphi":
-        function = sp.Function("varphi")
-    elif condition == "M":
-        function = sp.Function("M")
-    elif condition == "Q":
-        function = sp.Function("Q")
-    return function(sp.Eq(x_i, evaluation))
-
-def get_value_of_condition(values, condition, beam_number, evaluation, spring_force="determine when matching conditions"):
-    expression = sp.Integer(0)
-    if len(values) > 1:
-        for i in range(1, len(values)): # the first entry (0) is ommitted
-            if values[i][1] == "torsional_spring":
-                value = sp.symbols("k_varphi")*get_function_evaluated_at("\\varphi", beam_number, evaluation)
-
-            if values[i][1] == "linear_spring":
-                if condition == "M":
-                    value = sp.Mul(*(sp.symbols("k_w")*get_function_evaluated_at("w", beam_number, evaluation), sp.symbols("a")), evaluate=False)
-                else:  # condition == 'Q'
-                    value = sp.symbols("k_w")*get_function_evaluated_at("w", beam_number, evaluation)
-            elif values[i][1] == "rigid_linear_spring":
-                if condition == "M":
-                    value = sp.symbols("k_w")* get_function_evaluated_at("\\varphi", beam_number, evaluation)*sp.symbols("a")**2
-            elif values[i][1] == "linear_spring_rigid":
-                if condition == "Q":
-                    value = spring_force
-
-            elif values[i][1] == "single_moment":
-                value = sp.symbols("M")
-            elif values[i][1] == "single_force":
-                value = sp.symbols("F")*sp.symbols("a")
-            elif values[i][1] == "rigid_beam":
-                if condition == "M":
-                    value = sp.Mul(*(get_function_evaluated_at("Q", beam_number, evaluation), sp.symbols("a")), evaluate=False)
-                else:  # condition == 'w'
-                    value = sp.symbols("a")*get_function_evaluated_at("\\varphi", beam_number, evaluation)
-            elif values[i][1] == "bearing_connection":
-                if condition == "M":
-                    value = sp.Mul(*(spring_force, sp.symbols("a")), evaluate=False)
-                if condition == "w":
-                    value = sp.symbols("a")*get_function_evaluated_at("\\varphi", beam_number, evaluation)
-            if values[i][0]:
-                expression += value
-            else:
-                expression -= value
-    return expression
 
 def data_for_matching_conditions(system):
     data_list = []
@@ -433,11 +370,3 @@ def data_for_matching_conditions(system):
             #print(bond.mc_position)
 
     return data_list
-
-
-def normalize_coordinates(values, normalization):
-    normalized_values = [0, 0]
-    for i in range(len(values)):
-        normalized_values[i] = values[i] / normalization
-
-    return normalized_values

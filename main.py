@@ -1,7 +1,8 @@
 # this file mimics the frontend; if you run it, it will call all functions of the backend of "ode_beam"
-
 from ode_beam_backend import odebeam_backend
-
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+rcParams['text.usetex'] = True
 
 def test_case_data(test_case):
     """this function is the setup for the ode_beam backend. By defining a test_case it calls all the necessary functions of ode_beam"""
@@ -38,8 +39,8 @@ def test_case_data(test_case):
 #Thermal Test Case:
 calculate_thermal_load = False  # Set to True to calculate thermal load
 material = "steel"  # Choose between "steel" or "aluminium"
-data_list_ode, data_list_bc, data_list_mc = odebeam_backend(test_case_data(1), 10, 25, 0, calculate_thermal_load, material)
+data_list_ode, data_list_mc, data_listbc, data_listmc = odebeam_backend(test_case_data(2))
 
-print("the ansatz is", data_list_ode)
-print("the boundary conditions are", data_list_bc)
-print("the matching conditions are", data_list_mc)
+print("the ansatz is", data_list_ode[0])
+print("the boundary conditions are", data_listbc)
+print("the matching conditions are", data_listmc)
