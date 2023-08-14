@@ -1,7 +1,7 @@
-from classes import MatchingConditionSymbol, System
+from classes import System
 
 from system import change_bearings_to_connections, determine_MC_bearings_and_MC_rigid_beams, create_new_beam, create_new_connections_and_bonds, \
-    create_dependencies, data_for_boundary_conditions, data_for_matching_conditions, check_positions_of_system, check_degree_of_indeterminacy
+    create_dependencies, data_for_matching_conditions, check_positions_of_system, check_degree_of_indeterminacy
 from exceptions import NoElementsInSystemError
 from results import data_for_ansatz_ode, data_bc, data_mc
 
@@ -63,7 +63,6 @@ def odebeam_backend(data):
     
     check_positions_of_system(system)
     check_degree_of_indeterminacy(system)
-    
     system.determine_conditions()
     
     data_list_ode = data_for_ansatz_ode(system)
@@ -76,7 +75,7 @@ def odebeam_backend(data):
     data_list_mc = data_for_matching_conditions(system)
     data_listbc = data_bc(system)
     data_listmc = data_mc(system)
-    #print(data_list_mc)
+    # print(data_list_mc)
 
     
     return data_list_ode, data_list_mc, data_listbc, data_listmc

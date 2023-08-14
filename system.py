@@ -86,7 +86,7 @@ def create_correct_type_of_connection_or_bond(position, type_string, positive):
     elif type_string == "floating_bearing_MC":
         new_connection_or_bond = FloatingBearingMC(position)
     elif type_string == "rigid_beam_MC":
-        new_connection_or_bond = RigidBeamMC(position, positive)
+        new_connection_or_bond = RigidBeamMC(position)
     elif type_string == "single_moment":
         new_connection_or_bond = SingleMoment(position, positive)
     elif type_string == "single_force":
@@ -217,8 +217,11 @@ def change_bearings_to_connections(system):
                                     if isinstance(bd, FloatingBearing) or isinstance(bd, FixedBearing) or isinstance(bd, FloatingBearingMC) or isinstance(bd, FixedBearingMC):
                                         system.bond_list.remove(bd)
                                         pos.bond_list.remove(bd)
-                                        for beam in pos.beam_list:
-                                            beam.bond_list.remove(bd)
+                                        for beam in bond.beam_list:
+                                            try:
+                                                beam.bond_list.remove(bd)
+                                            except:
+                                                pass
                                         if isinstance(bd, FloatingBearing) or isinstance(bd, FloatingBearingMC):
                                             forces = 1
                                         if isinstance(bd, FixedBearing) or isinstance(bd, FixedBearingMC):
@@ -264,30 +267,10 @@ def check_positions_of_system(system):
                     raise TorsionalSpringAtJointError("Ein Platzieren von Torsionsfedern an einem Lager als Übergangselement ist nicht möglich, da sie (zurzeit) nicht eindeutig einem der Balken zugeordnet werden kann.")
         if isinstance(bond, FreeEnd):
             if len(bond.beam_list) > 1:
-                raise JointAndFreeEndConfusionError("Sie haben ein freies Ende, das am Rand eines Balkens sitzt, inmitten des Systems gesetzt. Tauschen Sie es durch das 'Gelenk'-Symbol aus. Sie finden es bei den Übergangselementen.")
-        if isinstance(bond, RigidConnection):
-            for connection in bond.position_list[0].connection_list:
-                if isinstance(connection, RigidBeam):
-                    bearing_con1 = False
-                    if any(connec.type == "bearing_connection" for connec in connection.position_list[0].connection_list):
-                        bearing_con1 = True
-                    if any(connec.type == "bearing_connection" for connec in connection.position_list[1].connection_list):
-                        bearing_con1 = True
-            for connection in bond.position_list[1].connection_list:
-                if isinstance(connection, RigidBeam):
-                    bearing_con2 = False
-                    if any(connec.type == "bearing_connection" for connec in connection.position_list[0].connection_list):
-                        bearing_con2 = True
-                    if any(connec.type == "bearing_connection" for connec in connection.position_list[1].connection_list):
-                        bearing_con2 = True
-            if bearing_con1 and bearing_con2:
-                raise GeneralUserError("Diese Übergangsbedingung kann noch nicht abgebildet werden.")
-                
-
+                raise JointAndFreeEndConfusionError("Sie haben ein freies Ende, das am Rand eines Balkens sitzt, inmitten des Systems gesetzt. Tauschen Sie es durch das 'Gelenk'-Symbol aus. Sie finden es bei den Übergangselementen.")              
     for connection in system.connection_list:
         if isinstance(connection, RigidBeam):
             for position in connection.position_list:
-                print(position.bond_list, position.beam_list, position.connection_list)
                 if not position.bond_list and not position.beam_list and len(position.connection_list)<2:
                     raise RigidBeamEndsInNothingError()
 
@@ -308,7 +291,7 @@ def check_degree_of_indeterminacy(system):
         elif isinstance(bond, RigidBeamMC):
             equations -= 3  # because they connect two beams to be as one
     for connection in system.connection_list:
-        if connection.type == "linear_spring" or connection.type == "torsional_spring":
+        if isinstance(connection, LinearSpring) or isinstance(connection, TorsionalSpring):
             unknowns += 1
         elif isinstance(connection, BearingConnection):
             unknowns += connection.forces
@@ -359,10 +342,20 @@ def data_for_matching_conditions(system):
             data_plus = {"positive_cross_section": [bond.mc_position[1], list_conditions_positive],
                          "is_default": bond.cross_sections_default[1]}
             cross_sections.append(data_plus)
-            if bond.with_bearing:
-                bond_type = bond.type + "_bearing"
+            if isinstance(bond, RigidConnection):
+                    typus = "rigid_connection"
+            elif isinstance(bond, Joint):
+                typus = "joint"
+            elif isinstance(bond, LinearSpringMC):
+                typus = "linear_spring_MC"
+            elif isinstance(bond, RigidBeamMC):
+                typus = "rigid_beam_MC"
             else:
-                bond_type = bond.type
+                typus = "bearing_MC"
+            if any(bond.with_bearing):
+                bond_type = typus + "_bearing"
+            else:
+                bond_type = typus
 
             matching_condition = [bond_type, cross_sections, bond.beam_direction]
             data_list.append(matching_condition)
