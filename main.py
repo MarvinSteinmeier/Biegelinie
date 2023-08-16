@@ -29,8 +29,9 @@ def test_case_data(test_case):
 #Thermal Test Case:
 calculate_thermal_load = False  # Set to True to calculate thermal load
 material = "steel"  # Choose between "steel" or "aluminium"
-data_list_ode, data_list_mc, data_listbc, data_listmc = odebeam_backend(test_case_data(2))
+data_list_ode, data_list_mc, data_listbc, data_listmc, data_list_bc_evaluated = odebeam_backend(test_case_data(1))
 for i in range(len(data_list_ode)):
     print(f"the ansatz for beam {i+1} is {data_list_ode[i]}")
 print("the boundary conditions are", data_listbc)
+print("the boundary conditions inserted in the ansatz provide", data_list_bc_evaluated)
 print("the matching conditions are", data_listmc)

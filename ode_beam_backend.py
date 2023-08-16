@@ -3,7 +3,7 @@ from classes import System
 from system import change_bearings_to_connections, determine_MC_bearings_and_MC_rigid_beams, create_new_beam, create_new_connections_and_bonds, \
     create_dependencies, data_for_matching_conditions, check_positions_of_system, check_degree_of_indeterminacy
 from exceptions import NoElementsInSystemError
-from results import data_for_ansatz_ode, data_bc, data_mc
+from results import data_for_ansatz_ode, data_bc, data_mc, data_bc_evaluated
 
 def odebeam_backend(data):
     """this function processes the data of the frontend for the backend of ode beam"""
@@ -74,11 +74,12 @@ def odebeam_backend(data):
     #data_for_boundary_conditions_sympy(system)
     data_list_mc = data_for_matching_conditions(system)
     data_listbc = data_bc(system)
+    data_list_bc_evaluated = data_bc_evaluated(system)
     data_listmc = data_mc(system)
     # print(data_list_mc)
 
     
-    return data_list_ode, data_list_mc, data_listbc, data_listmc
+    return data_list_ode, data_list_mc, data_listbc, data_listmc, data_list_bc_evaluated
 
 
 def normalize_values(values, normalization):

@@ -18,6 +18,7 @@ def create_new_beam(start_and_end_coordinates, line_load, type_string, coordinat
         system.add_beam(new_beam)
         new_beam.beam_index = (system.beam_list.index(new_beam) + 1)
         new_beam.calc_ansatz_for_ODE_of_beam(line_load)
+        new_beam.calc_ansatz_for_ODE_of_beam_constants()
 
         for position in position_list:
             position.add_beam(new_beam)

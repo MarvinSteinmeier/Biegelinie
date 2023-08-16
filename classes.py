@@ -57,9 +57,16 @@ def determine_boundary_conditions(beam, bond):
     x_position, sign_cross_section, position, _, _, _ = determine_position(beam, bond)
     
     bond.eva_pt = f"(x_{beam.beam_index}={x_position})"
+    bond.evaluation = x_position
     for index, entry in enumerate(bond.constraints):
         if entry:
             bond.bc_cons[index] += f"{bond.eva_pt}"
+            if index != 3:
+                bond.evaluated_cons_lhs[index] = -beam.evaluate_ansatz_constants(index, x_position)
+                bond.evaluated_cons_rhs[index] = beam.evaluate_ansatz_line_load(index, x_position)
+            else:
+                bond.evaluated_cons_lhs[index] = beam.evaluate_ansatz_constants(index, x_position)/beam.symbolic_bending_stiffness
+                bond.evaluated_cons_rhs[index] = -beam.evaluate_ansatz_line_load(index, x_position)/beam.symbolic_bending_stiffness
 
     for connection in position.connection_list:
         if not connection.in_condition_considered:
@@ -73,6 +80,8 @@ def determine_boundary_conditions(beam, bond):
                                 if isinstance(con, LinearSpring):
                                     if position != pos:
                                         bond.bc_cons[1] += f"{translate_plus_minus(not sign_cross_section)}{con.spring_constant}\\,\\varphi{bond.eva_pt}{{{connection.length}}}^2"
+                                        bond.evaluated_cons_lhs[1] += -sign_evaluation((not sign_cross_section))*con.spring_constant*beam.evaluate_ansatz_constants(2, bond.evaluation)*connection.length**2
+                                        bond.evaluated_cons_rhs[1] += sign_evaluation((not sign_cross_section))*con.spring_constant*beam.evaluate_ansatz_line_load(2, bond.evaluation)*connection.length**2
                                 elif isinstance(con, SingleForce):
                                     if position != pos:
                                         if all([con.positive, sign_cross_section]) or all([con.positive, not sign_cross_section]):
@@ -82,12 +91,16 @@ def determine_boundary_conditions(beam, bond):
                                         if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
                                             sign_force = not sign_force 
                                         bond.bc_cons[1] += f"{translate_plus_minus(sign_force)}{con.symbol}\\,{connection.length}"
-                                        
+                                        bond.evaluated_cons_rhs[1] += sign_evaluation((not sign_force))*con.symbol*connection.length
                                 else:
                                     extend_boundary_condition(beam, bond, con, sign_cross_section)
                 else:  # rigid beam is "inside"
                     bond.bc_cons[1] += f"{translate_plus_minus((not sign_cross_section))}Q{bond.eva_pt}\\,{connection.length}"
                     bond.bc_cons[3] += f"{translate_plus_minus((sign_cross_section))}{connection.length}\\,\\varphi{bond.eva_pt}"
+                    bond.evaluated_cons_lhs[1] += -sign_evaluation((not sign_cross_section))*beam.evaluate_ansatz_constants(0, bond.evaluation)*connection.length
+                    bond.evaluated_cons_rhs[1] += sign_evaluation((not sign_cross_section))*beam.evaluate_ansatz_line_load(0, bond.evaluation)*connection.length
+                    bond.evaluated_cons_lhs[3] += -sign_evaluation((not sign_cross_section))*connection.length*beam.evaluate_ansatz_constants(2, bond.evaluation)
+                    bond.evaluated_cons_rhs[3] += sign_evaluation((not sign_cross_section))*connection.length*beam.evaluate_ansatz_line_load(2, bond.evaluation)
                     for pos in connection.position_list:
                         for con in pos.connection_list:
                             if not con.in_condition_considered:
@@ -95,6 +108,8 @@ def determine_boundary_conditions(beam, bond):
                                 if isinstance(con, LinearSpring):
                                     if position == pos:
                                         bond.bc_cons[1] += f"{translate_plus_minus(True)}{con.spring_constant}\\,w{bond.eva_pt}\\,{connection.length}"
+                                        bond.evaluated_cons_lhs[1] += sign_evaluation(True)*con.spring_constant*beam.evaluate_ansatz_constants(3, bond.evaluation)*connection.length/beam.symbolic_bending_stiffness
+                                        bond.evaluated_cons_rhs[1] += -sign_evaluation(True)*con.spring_constant*beam.evaluate_ansatz_line_load(3, bond.evaluation)*connection.length/beam.symbolic_bending_stiffness
                                 elif isinstance(con, SingleForce):
                                     if position == pos:
                                         if all([con.positive, sign_cross_section]) or all([con.positive, not sign_cross_section]):
@@ -104,6 +119,7 @@ def determine_boundary_conditions(beam, bond):
                                         if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
                                             sign_force = not sign_force 
                                         bond.bc_cons[1] += f"{translate_plus_minus(sign_force)}{con.symbol}\\,{connection.length}"
+                                        bond.evaluated_cons_rhs[1] += sign_evaluation((not sign_force))*con.symbol*connection.length
                                 else:
                                     extend_boundary_condition(beam, bond, con, sign_cross_section)
             else:
@@ -115,8 +131,12 @@ def extend_boundary_condition(beam, bond, connection, sign_cross_section):
     
     if isinstance(connection, TorsionalSpring):
         bond.bc_cons[1] += f"{translate_plus_minus((not sign_cross_section))}{connection.spring_constant}\\,\\varphi{bond.eva_pt}"
+        bond.evaluated_cons_lhs[1] += -sign_evaluation((not sign_cross_section))*connection.spring_constant*beam.evaluate_ansatz_constants(2, bond.evaluation)
+        bond.evaluated_cons_rhs[1] += sign_evaluation((not sign_cross_section))*connection.spring_constant*beam.evaluate_ansatz_line_load(2, bond.evaluation)
     elif isinstance(connection, LinearSpring):
         bond.bc_cons[0] += f"{translate_plus_minus((not sign_cross_section))}{connection.spring_constant}\\,w{bond.eva_pt}"
+        bond.evaluated_cons_lhs[0] += sign_evaluation((not sign_cross_section))*connection.spring_constant*beam.evaluate_ansatz_constants(3, bond.evaluation)/beam.symbolic_bending_stiffness
+        bond.evaluated_cons_rhs[0] += -sign_evaluation((not sign_cross_section))*connection.spring_constant*beam.evaluate_ansatz_line_load(3, bond.evaluation)/beam.symbolic_bending_stiffness
     elif isinstance(connection, SingleMoment):
         if not sign_cross_section:  # the single moment is subtracted at the negative cross section
             sign_moment = False
@@ -129,6 +149,7 @@ def extend_boundary_condition(beam, bond, connection, sign_cross_section):
         if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
             sign_moment = not sign_moment 
         bond.bc_cons[1] += f"{translate_plus_minus(sign_moment)}{connection.symbol}"
+        bond.evaluated_cons_rhs[1] += sign_evaluation((not sign_moment))*connection.symbol
     elif isinstance(connection, SingleForce):
         if not sign_cross_section:  # the single force is subtracted at the negative cross section
             sign_force = False
@@ -139,6 +160,7 @@ def extend_boundary_condition(beam, bond, connection, sign_cross_section):
         if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
             sign_force = not sign_force 
         bond.bc_cons[0] += f"{translate_plus_minus(sign_force)}{connection.symbol}"
+        bond.evaluated_cons_rhs[0] += sign_evaluation((not sign_force))*connection.symbol
 
 
 def determine_matching_conditions(beam, bond):
@@ -537,6 +559,12 @@ def translate_plus_minus(boolean):
         return "-"
 
 
+def sign_evaluation(boolean):
+    if boolean:
+        return 1
+    else:
+        return -1
+
 class Truss:
     """this class is the base class for beams and rigid beams"""
 
@@ -568,6 +596,7 @@ class Beam(Truss):
     """this class is the class for beams"""
     
     symbolic_length = sp.symbols("l")
+    symbolic_bending_stiffness = sp.symbols("EI")
     
     def __init__(self, position_list, coordinate_system_position, coordinate_system_orientation):
         super().__init__(position_list)
@@ -582,6 +611,11 @@ class Beam(Truss):
         self.moment = ""#self.set_moment_of_x()
         self.angle_phi = ""#self.set_angle_phi_of_x()
         self.deflection = ""#self.set_deflection_of_x()
+        
+        self.shear_force_constants = ""#self.set_shear_force_of_x()
+        self.moment_constants = ""#self.set_moment_of_x()
+        self.angle_phi_constants = ""#self.set_angle_phi_of_x()
+        self.deflection_constants = ""#self.set_deflection_of_x()
 
         self.beam_index = 0
 
@@ -621,6 +655,38 @@ class Beam(Truss):
         self.moment = sp.integrate(self.shear_force, x_i)
         self.angle_phi = sp.integrate(self.moment, x_i)
         self.deflection = sp.integrate(self.angle_phi, x_i)
+        
+    def calc_ansatz_for_ODE_of_beam_constants(self):
+        """this method calculates and sets the ansatz for the ode of the beam"""
+        
+        x_i = sp.symbols(f"x_{self.beam_index}")
+        C_i = (self.beam_index-1)*4 + 1 # index of first constant of beam (others are iterated in f-string)
+        self.shear_force_constants = sp.symbols(f"C_{C_i}")
+        self.moment_constants = sp.integrate(self.shear_force_constants, x_i) + sp.symbols(f"C_{C_i+1}")
+        self.angle_phi_constants = sp.integrate(self.moment_constants, x_i) + sp.symbols(f"C_{C_i+2}")
+        self.deflection_constants = sp.integrate(self.angle_phi_constants, x_i) + sp.symbols(f"C_{C_i+3}")
+        
+    def evaluate_ansatz_line_load(self, index, position):
+        x_i = sp.symbols(f"x_{self.beam_index}")
+        if index == 0:
+            return (self.shear_force.subs(x_i, position))
+        elif index == 1:
+            return (self.moment.subs(x_i, position))
+        elif index == 2:
+            return (self.angle_phi.subs(x_i, position))
+        else: # index == 3
+            return (self.deflection.subs(x_i, position))
+        
+    def evaluate_ansatz_constants(self, index, position):
+        x_i = sp.symbols(f"x_{self.beam_index}")
+        if index == 0:
+            return (self.shear_force_constants.subs(x_i, position))
+        elif index == 1:
+            return (self.moment_constants.subs(x_i, position))
+        elif index == 2:
+            return (self.angle_phi_constants.subs(x_i, position))
+        else: # index == 3
+            return (self.deflection_constants.subs(x_i, position))
         
 
 class RigidBeam(Truss):
@@ -688,6 +754,9 @@ class BoundaryConditionSymbol(Connection):
         self.eva_pt = "" # evaluation point, is set in set_up_boundary_conditions
         
         self.bc_cons = ["Q","M","\\varphi","w"]
+        
+        self.evaluated_cons_lhs = ["","","",""]
+        self.evaluated_cons_rhs = ["","","",""]
 
 
 class FixedBearing(BoundaryConditionSymbol):

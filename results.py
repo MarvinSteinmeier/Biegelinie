@@ -51,6 +51,27 @@ def get_symbolic_condition(bond):
     return conditions
 
 
+def data_bc_evaluated(system):
+    """this function extracts all boundary conditions for the display in the frontend"""
+    
+    data_list = []
+    for bond in system.bond_list:
+        if not isinstance(bond, MatchingConditionSymbol):
+            conditions = f"\\begin{{align}}{get_evaluated_condition(bond)}\\end{{align}}"
+            data_list.append(conditions)
+    return data_list
+
+
+def get_evaluated_condition(bond):
+    """this function gets the symbolic boundary condition based on the instance of the object"""
+    
+    conditions = ""
+    for index, entry in enumerate(bond.constraints):
+        if entry:
+            conditions += f"{sp.latex(sp.collect(sp.expand(bond.evaluated_cons_lhs[index]), {'C_1', 'C_2', 'C_3', 'C_4', 'C_5', 'C_6', 'C_7', 'C_8'}))} &= {sp.latex(bond.evaluated_cons_rhs[index])} \\\\"
+    return conditions
+
+
 def data_mc(system):
     """this function extracts all matching conditions for the display in the frontend"""
     
