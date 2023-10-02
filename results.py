@@ -15,18 +15,18 @@ def data_for_ansatz_ode(system):
                     EIw''''(x_{{{x_i}}})&={sp.latex(beam.line_load)}&&=q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                         EIw'''(x_{{{x_i}}})&={sp.latex(beam.shear_force)}+C_{{{C_i}}}&&=-Q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                             EIw''(x_{{{x_i}}})&={sp.latex(beam.moment)}+{sp.latex(beam.thermalMoment)}+C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}}) \\\\ \
-                                w''(x_{{{x_i}}})&=1/EI *{sp.latex(beam.moment)}+{sp.latex(beam.thermalMoment)}+1/EI*C_{{{C_i}}}x_{{{x_i}}} + 1/EI*C_{{{C_i+1}}}) \\\\ \
-                                    w'(x_{{{x_i}}})&=1/EI *{sp.latex(beam.angle_phi)}+{sp.latex(beam.thermalAngle)}+1/EI*C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + 1/EI*C_{{{C_i+1}}}x_{{{x_i}}} + 1/EI*C_{{{C_i+2}}}) \\\\ \
-                                        w(x_{{{x_i}}})&=1/EI *{sp.latex(beam.deflection)}+{sp.latex(beam.thermalDeflection)}+1/EI*C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + 1/EI*C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + 1/EI*C_{{{C_i+2}}}+1/EI*C_{{{C_i+3}}} \
+                                w''(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.moment)}+{sp.latex(beam.thermalMoment)}+\\frac{{1}}{{EI}}C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}) \\\\ \
+                                    w'(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.angle_phi)}+{sp.latex(beam.thermalAngle)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}) \\\\ \
+                                        w(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.deflection)}+{sp.latex(beam.thermalDeflection)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}+\\frac{{1}}{{EI}}C_{{{C_i+3}}} \
                                             \\end{{align}}"
             else:
                  ansatz = f"\\begin{{align}} \
                     EIw''''(x_{{{x_i}}})&={sp.latex(beam.line_load)}&&=q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                         EIw'''(x_{{{x_i}}})&={sp.latex(beam.shear_force)}+C_{{{C_i}}}&&=-Q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                             EIw''(x_{{{x_i}}})&={sp.latex(beam.moment)}+C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}}) \\\\ \
-                                w''(x_{{{x_i}}})&=1/EI*{sp.latex(beam.moment)}+1/EI*C_{{{C_i}}}x_{{{x_i}}} + 1/EI*C_{{{C_i+1}}}) \\\\ \
-                                    w'(x_{{{x_i}}})&=1/EI*{sp.latex(beam.angle_phi)}+1/EI*C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + 1/EI*C_{{{C_i+1}}}x_{{{x_i}}} + 1/EI*C_{{{C_i+2}}}) \\\\ \
-                                        w(x_{{{x_i}}})&=1/EI*{sp.latex(beam.deflection)}+1/EI*C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + 1/EI*C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + 1/EI*C_{{{C_i+2}}}+1/EI*C_{{{C_i+3}}} \
+                                w''(x_{{{x_i}}})&=\\frac{{1}}{{EI}} {sp.latex(beam.moment)}+\\frac{{1}}{{EI}}C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}) \\\\ \
+                                    w'(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.angle_phi)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{1}{EI}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}) \\\\ \
+                                        w(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.deflection)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}+\\frac{{1}}{{EI}}C_{{{C_i+3}}} \
                                             \\end{{align}}"
         else:
             if beam.thermal_load:
@@ -34,18 +34,18 @@ def data_for_ansatz_ode(system):
                     EIw''''(x_{{{x_i}}})&=0&&=q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                         EIw'''(x_{{{x_i}}})&=C_{{{C_i}}}&&=-Q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                             EIw''(x_{{{x_i}}})&=C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                                w''(x_{{{x_i}}})&=C_{{{C_i}}}x_{{{x_i}}} + 1/EI*C_{{{C_i+1}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                                    w'(x_{{{x_i}}})&=C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + 1/EI*C_{{{C_i+1}}}x_{{{x_i}}} + 1/EI*C_{{{C_i+2}}}) \\\\ \
-                                        w(x_{{{x_i}}})&=C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + 1/EI*C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + 1/EI*C_{{{C_i+2}}}+ 1/EI*C_{{{C_i+3}}} \
+                                w''(x_{{{x_i}}})&=C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
+                                    w'(x_{{{x_i}}})&=C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}) \\\\ \
+                                        w(x_{{{x_i}}})&=C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}+ \\frac{{1}}{{EI}}C_{{{C_i+3}}} \
                                             \\end{{align}}"
             else:
                 ansatz = f"\\begin{{align}} \
                     EIw''''(x_{{{x_i}}})&=0&&=q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                         EIw'''(x_{{{x_i}}})&=C_{{{C_i}}}&&=-Q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                             EIw''(x_{{{x_i}}})&=C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                                w''(x_{{{x_i}}})&=1/EI*C_{{{C_i}}}x_{{{x_i}}} + 1/EI*C_{{{C_i+1}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                                    w'(x_{{{x_i}}})&=1/EI*C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + 1/EI*C_{{{C_i+1}}}x_{{{x_i}}} + 1/EI*C_{{{C_i+2}}}) \\\\ \
-                                        w(x_{{{x_i}}})&=1/EI*C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + 1/EI*C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + 1/EI*C_{{{C_i+2}}}+ 1/EI*C_{{{C_i+3}}} \
+                                w''(x_{{{x_i}}})&=\\frac{{1}}{{EI}}C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
+                                    w'(x_{{{x_i}}})&=\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}) \\\\ \
+                                        w(x_{{{x_i}}})&=\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}+ \\frac{{1}}{{EI}}C_{{{C_i+3}}} \
                                             \\end{{align}}"
         data_list.append(ansatz)
 
@@ -90,7 +90,7 @@ def get_evaluated_condition(bond):
     conditions = ""
     for index, entry in enumerate(bond.constraints):
         if entry:
-            conditions += f"{sp.latex(sp.collect(sp.expand(bond.evaluated_cons_lhs[0][index]), {'C_1', 'C_2', 'C_3', 'C_4', 'C_5', 'C_6', 'C_7', 'C_8'}))} &= {sp.latex(bond.evaluated_cons_rhs[0][index])} \\\\"
+            conditions += f"{sp.latex(sp.collect(sp.expand(bond.evaluated_cons_lhs[index]), {'C_1', 'C_2', 'C_3', 'C_4', 'C_5', 'C_6', 'C_7', 'C_8'}))} &= {sp.latex(bond.evaluated_cons_rhs[index])} \\\\"
     return conditions
 
 
@@ -156,6 +156,7 @@ def get_symbolic_condition_mc(bond):
                             conditions += bond.mc_cons[i][index] + f"{translate_plus_minus(bond.moment_sign[i])}{bond.spring_constant}\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right)\\,{bond.rigid_lever} &= 0 \\\\"
                         # plus set the deflection condition
                             conditions += f"{translate_empty_minus((bond.beam_direction[i]))}w{bond.eva_pt[i]}&=0 \\\\"
+
                 elif any(bond.with_bearing): # there is a bearing connection either on one side
                     for i in range(len(bond.with_bearing)):
                         if bond.with_bearing[i]:

@@ -209,6 +209,21 @@ def determine_matching_conditions(beam, bond):
     if isinstance(bond, RigidBeamMC):
         bond.beam_direction[0] = bond.beam_list[0].coordinate_system_orientation
         bond.beam_direction[1] = bond.beam_list[1].coordinate_system_orientation
+
+        if sign_cross_section:
+                index = 1
+                bond.evaluated_cons_lhs[index][1]=-beam.evaluate_ansatz_constants(1,x_position)
+                bond.evaluated_cons_rhs[index][1]=beam.evaluate_ansatz_line_load(1, x_position)
+                bond.evaluated_cons_lhs[index][3]=-beam.evaluate_ansatz_constants(3,x_position)
+                bond.evaluated_cons_rhs[index][3]=beam.evaluate_ansatz_line_load(3, x_position)
+        else:
+                index = 0
+                bond.evaluated_cons_lhs[index][3]=-beam.evaluate_ansatz_constants(3,x_position)
+                bond.evaluated_cons_rhs[index][3]=beam.evaluate_ansatz_line_load(3, x_position)
+                bond.evaluated_cons_lhs[index][2]=-beam.evaluate_ansatz_constants(2,x_position)
+                bond.evaluated_cons_rhs[index][2]=beam.evaluate_ansatz_line_load(2, x_position)      
+        print("Randbedingung Starrer Balken fertig")
+        
     else:
         if len(bond.position_list)>1:
             if position.z_coordinate == bond.position_list[0].z_coordinate:
@@ -235,6 +250,9 @@ def determine_matching_conditions(beam, bond):
                     bond.mc_cons[id_mc][index] += f"{bond.eva_pt[id_mc]}"
                 else:
                     bond.mc_cons[id_mc][index] = f"{translate_empty_minus(bond.beam_direction[id_mc])}w{bond.eva_pt[id_mc]}"
+
+
+
     if isinstance(bond, LinearSpringMC): # in order to define the spring force, the deflection is set with the evaluation point and the sign of the beam direction
         bond.mc_cons[id_mc][3] = f"{translate_empty_minus(bond.beam_direction[id_mc])}w{bond.eva_pt[id_mc]}"
         bond.deflection[id_mc] = bond.mc_cons[id_mc][3]
@@ -244,19 +262,23 @@ def determine_matching_conditions(beam, bond):
             index = 0    
         bond.evaluated_cons_lhs[index][1]=-beam.evaluate_ansatz_constants(1,x_position)
         bond.evaluated_cons_rhs[index][1]=beam.evaluate_ansatz_line_load(1, x_position)
+        bond.evaluated_cons_lhs[index][3]=beam.evaluate_ansatz_constants(3,x_position)
+        bond.evaluated_cons_rhs[index][3]=beam.evaluate_ansatz_line_load(3,x_position)
+        bond.evaluated_cons_lhs[index][0]=beam.evaluate_ansatz_constants(0,x_position)
+        bond.evaluated_cons_rhs[index][0]=beam.evaluate_ansatz_line_load(0,x_position)
 
     
-        if  sign_cross_section:
-            textNeg = bond.evaluated_cons_rhs[0][0]
-            textPos = bond.evaluated_cons_rhs[1][0]
-            bond.evaluated_cons_rhs[0][0]=bond.spring_constant*beam.evaluate_ansatz_constants(3,x_position)-bond.spring_constant*beam.evaluate_ansatz_line_load(3,x_position)/beam.symbolic_bending_stiffness-textNeg    
-            bond.evaluated_cons_rhs[1][0]=bond.spring_constant*beam.evaluate_ansatz_constants(3,x_position)-bond.spring_constant*beam.evaluate_ansatz_line_load(3,x_position)/beam.symbolic_bending_stiffness-textPos
-            bond.evaluated_cons_lhs[1][0]=beam.evaluate_ansatz_line_load(0,x_position)-beam.evaluate_ansatz_constants(0,x_position)
+       # if  sign_cross_section:
+       #     textNeg = bond.evaluated_cons_rhs[0][0]
+       #     textPos = bond.evaluated_cons_rhs[1][0]
+       #     bond.evaluated_cons_rhs[0][0]=bond.spring_constant*beam.evaluate_ansatz_constants(3,x_position)-bond.spring_constant*beam.evaluate_ansatz_line_load(3,x_position)/beam.symbolic_bending_stiffness-textNeg    
+       #     bond.evaluated_cons_rhs[1][0]=bond.spring_constant*beam.evaluate_ansatz_constants(3,x_position)-bond.spring_constant*beam.evaluate_ansatz_line_load(3,x_position)/beam.symbolic_bending_stiffness-textPos
+       #     bond.evaluated_cons_lhs[1][0]=beam.evaluate_ansatz_line_load(0,x_position)-beam.evaluate_ansatz_constants(0,x_position)
 
-        else:
-            bond.evaluated_cons_rhs[0][0]=bond.spring_constant*beam.evaluate_ansatz_constants(3,x_position)+bond.spring_constant*beam.evaluate_ansatz_line_load(3,x_position)/beam.symbolic_bending_stiffness
-            bond.evaluated_cons_rhs[1][0]=bond.spring_constant*beam.evaluate_ansatz_constants(3,x_position)+bond.spring_constant*beam.evaluate_ansatz_line_load(3,x_position)/beam.symbolic_bending_stiffness
-            bond.evaluated_cons_lhs[0][0]=-beam.evaluate_ansatz_line_load(0,x_position)-beam.evaluate_ansatz_constants(0,x_position)
+       # else:
+       #     bond.evaluated_cons_rhs[0][0]=bond.spring_constant*beam.evaluate_ansatz_constants(3,x_position)+bond.spring_constant*beam.evaluate_ansatz_line_load(3,x_position)/beam.symbolic_bending_stiffness
+       #     bond.evaluated_cons_rhs[1][0]=bond.spring_constant*beam.evaluate_ansatz_constants(3,x_position)+bond.spring_constant*beam.evaluate_ansatz_line_load(3,x_position)/beam.symbolic_bending_stiffness
+       #     bond.evaluated_cons_lhs[0][0]=-beam.evaluate_ansatz_line_load(0,x_position)-beam.evaluate_ansatz_constants(0,x_position)
 
             
             
@@ -281,6 +303,20 @@ def determine_matching_conditions(beam, bond):
             # set the evaluation point for the angle condition
             bond.mc_cons[0][2] += f"{bond.eva_pt[0]}"
             bond.mc_cons[1][2] += f"{bond.eva_pt[1]}"
+
+            if sign_cross_section:
+                index = 1
+                bond.evaluated_cons_lhs[index][1]=-beam.evaluate_ansatz_constants(1,x_position)
+                bond.evaluated_cons_rhs[index][1]=beam.evaluate_ansatz_line_load(1, x_position)
+                bond.evaluated_cons_lhs[index][3]=-beam.evaluate_ansatz_constants(3,x_position)
+                bond.evaluated_cons_rhs[index][3]=beam.evaluate_ansatz_line_load(3, x_position)
+            else:
+                index = 0
+                bond.evaluated_cons_lhs[index][3]=-beam.evaluate_ansatz_constants(3,x_position)
+                bond.evaluated_cons_rhs[index][3]=beam.evaluate_ansatz_line_load(3, x_position)
+                bond.evaluated_cons_lhs[index][2]=-beam.evaluate_ansatz_constants(2,x_position)
+                bond.evaluated_cons_rhs[index][2]=beam.evaluate_ansatz_line_load(2, x_position)      
+            print("Randbedingung Starrer Balken fertig")
 
     for connection in position.connection_list:
         if not connection.in_condition_considered:
@@ -633,8 +669,9 @@ class Beam(Truss):
         self.coordinate_system_position = coordinate_system_position
         self.coordinate_system_orientation = coordinate_system_orientation
         self.thermal_load = thermal_load #Variablen für denn Thermischen Belastungsfall
-        self.material_alpha= sp.symbols("alpha")
-        self.nablaT = sp.symbols("nablaT")
+        self.material_alpha= sp.symbols("\\alpha*\\nabla{T}")
+        self.nablaT = sp.symbols("\\nabla")
+        self.Temperatur = sp.symbols("T")
 
 
         # ansatz of ode
@@ -702,8 +739,8 @@ class Beam(Truss):
         self.shear_force = sp.integrate(self.line_load, x_i)
         if self.thermal_load:
             self.moment = sp.integrate(self.shear_force, x_i) #- self.material_alpha * self.nablaT
-            self.thermalMoment = - self.material_alpha*self.nablaT
-            print(self.moment)
+            self.thermalMoment = - self.material_alpha#*self.nablaT*self.Temperatur
+            print(self.thermalMoment)
         else:  
             self.moment = sp.integrate(self.shear_force, x_i)
         #self.moment = sp.integrate(self.shear_force, x_i)

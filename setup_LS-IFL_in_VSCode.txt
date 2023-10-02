@@ -1,0 +1,21 @@
+https://code.visualstudio.com/docs/python/tutorial-flask
+
+Follow Prerequisites
+1. is needed (in VisualStudioCode Search for "Python" in Extensions (on left hand side))
+2. is probably not needed (Python is usually included in the OS), probably check
+3. is needed, if you work with Windows
+
+Create a project environment for the Flak tutorial
+1. is not needed, the "hello_flask" folder is "LS-IFL"
+2. do this however you like (either with "code ." or via GUI) - on the left hand side in the Explorer you should see "applets", ".flaskenv" and so on
+3. follow the description as well as the options in VS Code - the virtual environment should appear in the explorer when created
+3.1 one can setup the virtual environment via the terminal (there might be problems on Windows), so the easiest way is to follow the suggestions of the VisualStudio GUI:
+- Strg+Shift+P > Python: Create Environment
+- Select an environment type > Venv
+- Select a Python installation > local path to python installation (if you have a microsoft store version, this did not work for me)
+- Select dependencies to install > requirements.txt (very important, otherwise one cannot work!)
+- wait till finished :)
+
+The rest is not needed (if you followed the steps above)
+
+The local server can be started from the Terminal via "flask run" and Strg+left mouse on "http://127.0.0.1:5000"
