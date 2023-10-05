@@ -25,7 +25,7 @@ def data_for_ansatz_ode(system):
                         EIw'''(x_{{{x_i}}})&={sp.latex(beam.shear_force)}+C_{{{C_i}}}&&=-Q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                             EIw''(x_{{{x_i}}})&={sp.latex(beam.moment)}+C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}}) \\\\ \
                                 w''(x_{{{x_i}}})&=\\frac{{1}}{{EI}} {sp.latex(beam.moment)}+\\frac{{1}}{{EI}}C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}) \\\\ \
-                                    w'(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.angle_phi)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{1}{EI}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}) \\\\ \
+                                    w'(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.angle_phi)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{1}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}) \\\\ \
                                         w(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.deflection)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}+\\frac{{1}}{{EI}}C_{{{C_i+3}}} \
                                             \\end{{align}}"
         else:
@@ -107,7 +107,7 @@ def data_mc(system):
 
 def get_symbolic_condition_mc(bond):
     """this function gets the symbolic matching condition based on the instance of the object"""
-    
+    b = True
     conditions = ""
     for index, entry in enumerate(bond.constraints):
         if entry:
@@ -154,8 +154,10 @@ def get_symbolic_condition_mc(bond):
                     if index==1: # set the moment conditions
                         for i in (0,1):
                             conditions += bond.mc_cons[i][index] + f"{translate_plus_minus(bond.moment_sign[i])}{bond.spring_constant}\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right)\\,{bond.rigid_lever} &= 0 \\\\"
+                            print("Fertig")
                         # plus set the deflection condition
                             conditions += f"{translate_empty_minus((bond.beam_direction[i]))}w{bond.eva_pt[i]}&=0 \\\\"
+                            print("Fertig")
 
                 elif any(bond.with_bearing): # there is a bearing connection either on one side
                     for i in range(len(bond.with_bearing)):
@@ -163,19 +165,35 @@ def get_symbolic_condition_mc(bond):
                             if index==0: # set the respective shear force conditions
                                 conditions += f"{bond.mc_cons[not i][index]}{translate_plus_minus(not bond.cross_sections_default[not i])}{bond.spring_constant}\\,\\left(\\left[{bond.deflection[1]}\\right] \
                                         -\\left[{bond.deflection[0]}\\right]\\right) &= 0 \\\\"
+                                print("Fertig")
+
                             if index==1: # set the moment conditions
                                 conditions += bond.mc_cons[not i][index]  +  "&= 0 \\\\"
                                 conditions += bond.mc_cons[i][index]+ f"{translate_plus_minus(bond.moment_sign[i])}{bond.spring_constant}\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right)\\,{bond.rigid_lever} &= 0 \\\\"
                             # plus set the deflection condition
                                 conditions += f"{translate_empty_minus((bond.beam_direction[i]))}w{bond.eva_pt[i]}&=0 \\\\"    
+                                print("Fertig")
+
                             
                 else: # there is no bearing connection
                     for i in (0,1):
                         if index == 1: # moment conditions are set separately to zero
                             conditions += bond.mc_cons[i][index] + "&=0 \\\\"
+                          
                         else: # shear forces are set separately to the spring force; with cross_sections_default one considers the direction/position of the coordinate system
-                            conditions += f"{bond.mc_cons[i][index]}{translate_plus_minus(not bond.cross_sections_default[i])} \
+                            conditions += f"{bond.mc_cons[i][index]}&={translate_plus_minus(not bond.cross_sections_default[i])} \
                                 {bond.spring_constant}\\,\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right) &= 0 \\\\"
+                            if b:
+                                conditions += f"Ergebniss: {bond.evaluated_cons_lhs[0][1]}&={bond.evaluated_cons_rhs[0][1]} \\,\\left(\\left[{bond.evaluated_cons_lhs[0][0]}+{bond.evaluated_cons_lhs[0][3]}{bond.spring_constant}-{bond.evaluated_cons_lhs[1][3]}{bond.spring_constant}&={bond.evaluated_cons_rhs[0][0]}-{bond.evaluated_cons_rhs[0][3]}\\right]\\right) \\, \
+                                 \\left(\\left[{bond.evaluated_cons_lhs[1][1]}&={bond.evaluated_cons_rhs[1][1]}\\right]\\right)\\,\\left(\\left[{bond.evaluated_cons_lhs[0][3]}{bond.spring_constant}-{bond.evaluated_cons_lhs[1][0]}{bond.spring_constant}-{bond.evaluated_cons_lhs[1][3]}{bond.spring_constant}&=-{bond.evaluated_cons_rhs[0][3]}\\right)\\right \\\\"
+                                b=False
+                            else:
+                                b=True
+                    
+                    print("Fertig Ausgabe Configurieren")
+                    #print(conditions)
+                    
+
             elif isinstance(bond, RigidBeamMC):
                 if index == 0: # consider sign of cross sections default for shear forces
                     conditions += f"{translate_empty_minus(bond.cross_sections_default[0])}{bond.mc_cons[0][index]}&={translate_empty_minus(bond.cross_sections_default[1])}{bond.mc_cons[1][index]} \\\\"
@@ -191,6 +209,15 @@ def get_symbolic_condition_mc(bond):
                     conditions += f"{bond.mc_cons[0][index]}&={sign}{bond.mc_cons[1][index]} \\\\"
                 else: # index == 3; for the deflection consider the beam direction for the sign
                     conditions +=  f"{bond.mc_cons[0][index]}&={bond.mc_cons[1][index]} \\\\"
+
+                    if b:
+                        conditions += f"Ergebniss: {bond.evaluated_cons_lhs[0][1]}&={bond.evaluated_cons_rhs[0][1]} \\,\\left(\\left[{bond.evaluated_cons_lhs[0][0]}+{bond.evaluated_cons_lhs[1][0]}&=-{bond.evaluated_cons_rhs[0][0]}\\right]\\right) \\, \
+                                 \\left(\\left[{bond.evaluated_cons_lhs[1][1]}&={bond.evaluated_cons_rhs[1][1]}\\right]\\right)\\,\\left(\\left[{bond.evaluated_cons_lhs[0][3]}-{bond.evaluated_cons_lhs[1][3]}&=-{bond.evaluated_cons_rhs[0][3]}\\right)\\right \\\\"
+                        b=False
+                    else:
+                        b=True
+
+                    
             elif isinstance(bond, FixedBearingMC) or isinstance(bond, FloatingBearingMC):
                 if not bond.rigid_lever: # if there is a rigid beam at the bearing
                     for i in (0,1):
@@ -211,7 +238,14 @@ def get_symbolic_condition_mc(bond):
                             sign_angle = "-"
                         conditions += bond.mc_cons[0][2] + "&=" + sign_angle + bond.mc_cons[1][2] + "\\\\"
                         for i in (0,1):# deflection conditions are set separately to zero
-                            conditions += bond.mc_cons[i][index] + "&=0 \\\\"          
+                            conditions += bond.mc_cons[i][index] + "&=0 \\\\"   
+
+                        if b:
+                            conditions += f"Ergebniss: {bond.evaluated_cons_lhs[0][1]}&={bond.evaluated_cons_rhs[0][1]} \\,\\left(\\left[{bond.evaluated_cons_lhs[0][0]}-{bond.evaluated_cons_lhs[1][0]}&=-{bond.evaluated_cons_rhs[0][0]}\\right]\\right) \\, \
+                                 \\left(\\left[{bond.evaluated_cons_lhs[1][1]}&={bond.evaluated_cons_rhs[1][1]}\\right]\\right)\\,\\left(\\left[{bond.evaluated_cons_lhs[0][3]}-{bond.evaluated_cons_lhs[1][3]}&=-{bond.evaluated_cons_rhs[0][3]}\\right)\\right \\\\"
+                            b=False
+                        else:
+                            b=True           
     return conditions
             
             
