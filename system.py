@@ -8,6 +8,7 @@ def create_new_beam(start_and_end_coordinates, line_load, type_string, coordinat
     
     position_list = []
     for position in start_and_end_coordinates:
+
         new_position = Position(position)
         new_position = system.add_position(new_position)
         position_list.append(new_position)
