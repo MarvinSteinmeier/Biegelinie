@@ -10,7 +10,7 @@
 
 #### 1.2 Benennung von Variablen & Funktionen
 
-Variablen & Functionen sind so bennant, dass man möglichst die Verhaltensweise aus dem Namen ablesen kann.
+Variablen & Funktionen sind so benannt, dass man möglichst die Verhaltensweise aus dem Namen ablesen kann.
 
 ### 2 Kommentare
 
