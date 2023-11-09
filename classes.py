@@ -241,14 +241,14 @@ def determine_matching_conditions(beam, bond):
             if len(bond.mc_cons[id_mc][index])<2: # due to bearing connection
                 if index != 3:
                     bond.mc_cons[id_mc][index] += f"{bond.eva_pt[id_mc]}"
-                    bond.evaluated_cons_lhs[a][index]=-beam.evaluate_ansatz_constants(index,x_position)
-                    bond.evaluated_cons_rhs[a][index]=beam.evaluate_ansatz_line_load(index, x_position)
+                    bond.evaluated_cons_lhs[id_mc][index]=-beam.evaluate_ansatz_constants(index,x_position)
+                    bond.evaluated_cons_rhs[id_mc][index]=beam.evaluate_ansatz_line_load(index, x_position)
                     print("Randbedingung Starrer Balken fertig")
 
                 else:
                     bond.mc_cons[id_mc][index] = f"{translate_empty_minus(bond.beam_direction[id_mc])}w{bond.eva_pt[id_mc]}"
-                    bond.evaluated_cons_lhs[a][index]=-beam.evaluate_ansatz_constants(index,x_position)
-                    bond.evaluated_cons_rhs[a][index]=beam.evaluate_ansatz_line_load(index, x_position)
+                    bond.evaluated_cons_lhs[id_mc][index]=sign_evaluation(bond.beam_direction[id_mc])*beam.evaluate_ansatz_constants(index,x_position)
+                    bond.evaluated_cons_rhs[id_mc][index]=-sign_evaluation(bond.beam_direction[id_mc])*beam.evaluate_ansatz_line_load(index, x_position)
                     print("Randbedingung Starrer Balken fertig")
 
 
