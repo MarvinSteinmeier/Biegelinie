@@ -14,7 +14,7 @@ def data_for_ansatz_ode(system):
                 ansatz = f"\\begin{{align}} \
                     (EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)})''&={sp.latex(beam.line_load)}&&=q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                         (EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)})'&={sp.latex(beam.shear_force)}+C_{{{C_i}}}&&=-Q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                            EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)}&={sp.latex(beam.moment)}+C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}}) \\\\ \
+                            EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)}&={sp.latex(beam.moment)}+C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}})frac{{1}}{{EI}}-{sp.latex(beam.thermalMoment)} \\\\ \
                                 w''(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.moment)}{sp.latex(beam.thermalMoment)}+\\frac{{1}}{{EI}}C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}} \\\\ \
                                     w'(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.angle_phi)}{sp.latex(beam.thermalAngle)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}} \\\\ \
                                         w(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.deflection)}{sp.latex(beam.thermalDeflection)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}+\\frac{{1}}{{EI}}C_{{{C_i+3}}} \
@@ -31,9 +31,9 @@ def data_for_ansatz_ode(system):
         else:
             if beam.thermal_load:
                 ansatz = f"\\begin{{align}} \
-                    EIw''''(x_{{{x_i}}})&=0&&=q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                        EIw'''(x_{{{x_i}}})&=C_{{{C_i}}}&&=-Q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                            EIw''(x_{{{x_i}}})&=C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
+                    (EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)})''=0&&=q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
+                        (EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)})'&=C_{{{C_i}}}&&=-Q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
+                            EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)}&=C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}})frac{{1}}{{EI}}-{sp.latex(beam.thermalMoment)} \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                                 w''(x_{{{x_i}}})&=C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                                     w'(x_{{{x_i}}})&=C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}) \\\\ \
                                         w(x_{{{x_i}}})&=C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}+ \\frac{{1}}{{EI}}C_{{{C_i+3}}} \
@@ -215,7 +215,7 @@ def get_symbolic_condition_mc(bond):
                                 conditions += f"{translate_empty_minus((bond.beam_direction[i]))}w{bond.eva_pt[i]}&=0 \\\\"    
                                 print("Fertig")
 
-                            
+                    T = "T"        
                 else: # there is no bearing connection
                     for i in (0,1):
                         if index == 1: # moment conditions are set separately to zero

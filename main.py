@@ -27,7 +27,7 @@ def test_case_data(test_case):
 #data_list_ode, data_list_bc, data_list_mc = odebeam_backend(test_case_data(1))
 
 #Thermal Test Case:
-calculate_thermal_load = False  # Set to True to calculate thermal load
+#calculate_thermal_load = True  # Set to True to calculate thermal load
 #material = "steel"  # Choose between "steel" or "aluminium" Metial is now fix as steel can be reimplemented if needed
 data_list_ode, data_list_mc, data_listbc, data_listmc, data_list_bc_evaluated, data_list_matching = odebeam_backend(test_case_data(2))
 for i in range(len(data_list_ode)):

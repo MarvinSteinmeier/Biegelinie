@@ -262,6 +262,8 @@ def determine_matching_conditions(beam, bond):
             index = 0    
         bond.evaluated_cons_lhs[index][1]=-beam.evaluate_ansatz_constants(1,x_position)
         bond.evaluated_cons_rhs[index][1]=beam.evaluate_ansatz_line_load(1, x_position)
+        
+        
         bond.evaluated_cons_lhs[index][3]=beam.evaluate_ansatz_constants(3,x_position)
         bond.evaluated_cons_rhs[index][3]=beam.evaluate_ansatz_line_load(3,x_position)
         bond.evaluated_cons_lhs[index][0]=beam.evaluate_ansatz_constants(0,x_position)
@@ -763,16 +765,19 @@ class Beam(Truss):
         if thermal_load:
             self.moment = ""#self.set_moment_of_x() - material_alpha * nablaT
             self.thermalMoment = ""
+            self.moment_constants2 = ""
         else:  
             self.moment = ""#self.set_moment_of_x()
         if thermal_load:
             self.angle_phi = ""#self.set_angle_phi_of_x()
             self.thermalAngle = ""
+            self.angle_phi_constants2 = ""
         else:        
             self.angle_phi = ""#self.set_angle_phi_of_x()
         if thermal_load:
             self.deflection = ""
             self.thermalDeflection = ""
+            self.deflection_constants2 = ""
         else:        
             self.deflection = ""#self.set_deflection_of_x()
         
@@ -856,22 +861,34 @@ class Beam(Truss):
         if index == 0:
             return (self.shear_force.subs(x_i, position))
         elif index == 1:
-            return (self.moment.subs(x_i, position))
+                return (self.moment.subs(x_i, position))
         elif index == 2:
-            return (self.angle_phi.subs(x_i, position))
+                return (self.angle_phi.subs(x_i, position))
         else: # index == 3
-            return (self.deflection.subs(x_i, position))
+                return (self.deflection.subs(x_i, position))
         
     def evaluate_ansatz_constants(self, index, position):
         x_i = sp.symbols(f"x_{self.beam_index}")
         if index == 0:
             return (self.shear_force_constants.subs(x_i, position))
         elif index == 1:
-            return (self.moment_constants.subs(x_i, position))
+            if self.thermal_load:
+                self.moment_constants2 = self.moment_constants + self.thermalMoment
+                return (self.moment_constants2.subs(x_i, position))
+            else:
+                return (self.moment_constants.subs(x_i, position))
         elif index == 2:
-            return (self.angle_phi_constants.subs(x_i, position))
+            if self.thermal_load:
+                self.angle_phi_constants2= self.angle_phi_constants + self.thermalAngle
+                return (self.angle_phi_constants2.subs(x_i, position))
+            else:
+                return (self.angle_phi_constants.subs(x_i, position))
         else: # index == 3
-            return (self.deflection_constants.subs(x_i, position))
+            if self.thermal_load:
+                self.deflection_constants2 = self.deflection_constants + self.thermalDeflection
+                return (self.deflection_constants2.subs(x_i, position))
+            else:
+                return (self.deflection_constants.subs(x_i, position))
         
 
 class RigidBeam(Truss):
