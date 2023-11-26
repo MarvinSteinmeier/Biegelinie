@@ -14,7 +14,7 @@ def test_case_data(test_case):
     elif test_case == 2:
         data = [{'type': 'straight_beam', 'endpoint': [[237.5, 480], [362.5, 480]], 'line_load': 'constant', 'coordinate_system_position': True, 'coordinate_system_orientation': True, 'thermal_load': True},
                 {'type': 'fixed_bearing', 'endpoint': [[237.5, 480]]}, 
-                {'type': 'straight_beam', 'endpoint': [[362.5, 373.375], [487.5, 373.375]], 'line_load': '', 'coordinate_system_position': True, 'coordinate_system_orientation': True, 'thermal_load':True},
+                {'type': 'straight_beam', 'endpoint': [[362.5, 373.375], [487.5, 373.375]], 'line_load': '', 'coordinate_system_position': True, 'coordinate_system_orientation': True, 'thermal_load':False},
                 {'type': 'linear_spring_MC', 'endpoint': [[362.5, 480], [362.5, 373.375]]},
                 {'type': 'rigid_support', 'endpoint': [[487.5, 373.375]]}, 
                 {'length_normalization': 125}]
