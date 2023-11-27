@@ -14,7 +14,7 @@ def data_for_ansatz_ode(system):
                 ansatz = f"\\begin{{align}} \
                     (EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)})''&={sp.latex(beam.line_load)}&&=q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                         (EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)})'&={sp.latex(beam.shear_force)}+C_{{{C_i}}}&&=-Q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                            EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)}&={sp.latex(beam.moment)}+C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}})frac{{1}}{{EI}}-{sp.latex(beam.thermalMoment)} \\\\ \
+                            EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)}&={sp.latex(beam.moment)}+C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}}) \\\\ \
                                 w''(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.moment)}{sp.latex(beam.thermalMoment)}+\\frac{{1}}{{EI}}C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}} \\\\ \
                                     w'(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.angle_phi)}{sp.latex(beam.thermalAngle)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}} \\\\ \
                                         w(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.deflection)}{sp.latex(beam.thermalDeflection)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}+\\frac{{1}}{{EI}}C_{{{C_i+3}}} \
@@ -25,8 +25,8 @@ def data_for_ansatz_ode(system):
                     EIw''''(x_{{{x_i}}})&={sp.latex(beam.line_load)}&&=q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                         EIw'''(x_{{{x_i}}})&={sp.latex(beam.shear_force)}+C_{{{C_i}}}&&=-Q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                             EIw''(x_{{{x_i}}})&={sp.latex(beam.moment)}+C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}}) \\\\ \
-                                w''(x_{{{x_i}}})&=\\frac{{1}}{{EI}} {sp.latex(beam.moment)}+\\frac{{1}}{{EI}}C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}) \\\\ \
-                                    w'(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.angle_phi)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{1}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}) \\\\ \
+                                w''(x_{{{x_i}}})&=\\frac{{1}}{{EI}} {sp.latex(beam.moment)}+\\frac{{1}}{{EI}}C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}} \\\\ \
+                                    w'(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.angle_phi)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{1}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}} \\\\ \
                                         w(x_{{{x_i}}})&=\\frac{{1}}{{EI}}{sp.latex(beam.deflection)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}+\\frac{{1}}{{EI}}C_{{{C_i+3}}} \
                                             \\end{{align}}"
                  print("Ausgabe 2")                            
@@ -34,13 +34,13 @@ def data_for_ansatz_ode(system):
         else:
             if beam.thermal_load:
                 ansatz = f"\\begin{{align}} \
-                    (EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)})''=0&&=q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
+                    (EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)})''&=0&&=q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                         (EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)})'&=C_{{{C_i}}}&&=-Q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                            EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)}&=C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}})frac{{1}}{{EI}}-{sp.latex(beam.thermalMoment)} \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                                w''(x_{{{x_i}}})&=C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                                    w'(x_{{{x_i}}})&=C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}) \\\\ \
-                                        w(x_{{{x_i}}})&=C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}+ \\frac{{1}}{{EI}}C_{{{C_i+3}}} \
-                                            \\end{{align}}"
+                            EIw''(x_{{{x_i}}})+EI{sp.latex(beam.material_alpha)}&=C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
+                                w''(x_{{{x_i}}})&={sp.latex(beam.thermalMoment)}+\\frac{{1}}{{EI}}C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}} \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
+                                    w'(x_{{{x_i}}})&={sp.latex(beam.thermalAngle)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}} \\\\ \
+                                        w(x_{{{x_i}}})&={sp.latex(beam.thermalDeflection)}+\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}+ \\frac{{1}}{{EI}}C_{{{C_i+3}}} \
+                                            \\end{{align}}" 
                 print("Ausgabe 3")                            
                                             
             else:
@@ -48,8 +48,8 @@ def data_for_ansatz_ode(system):
                     EIw''''(x_{{{x_i}}})&=0&&=q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                         EIw'''(x_{{{x_i}}})&=C_{{{C_i}}}&&=-Q(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
                             EIw''(x_{{{x_i}}})&=C_{{{C_i}}}x_{{{x_i}}} + C_{{{C_i+1}}}&&=-M(x_{{{x_i}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                                w''(x_{{{x_i}}})&=\\frac{{1}}{{EI}}C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}) \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
-                                    w'(x_{{{x_i}}})&=\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}) \\\\ \
+                                w''(x_{{{x_i}}})&=\\frac{{1}}{{EI}}C_{{{C_i}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}} \\vphantom{{\\frac{{1}}{{2}}}} \\\\ \
+                                    w'(x_{{{x_i}}})&=\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}x_{{{x_i}}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}} \\\\ \
                                         w(x_{{{x_i}}})&=\\frac{{1}}{{EI}}C_{{{C_i}}}\\frac{{x_{{{x_i}}}^3}}{{6}} + \\frac{{1}}{{EI}}C_{{{C_i+1}}}\\frac{{x_{{{x_i}}}^2}}{{2}} + \\frac{{1}}{{EI}}C_{{{C_i+2}}}+ \\frac{{1}}{{EI}}C_{{{C_i+3}}} \
                                             \\end{{align}}"
                 print("Ausgabe 4")                            
@@ -76,7 +76,7 @@ def get_symbolic_condition(bond):
     conditions = ""
     for index, entry in enumerate(bond.constraints):
         if entry:
-            conditions += f"{bond.bc_cons[index]} &= 0 \\\\"
+           conditions += f"{bond.bc_cons[index].replace('*','')} &= 0 \\\\"
     return conditions
 
 
@@ -129,7 +129,7 @@ def get_symbolic_condition_mc(bond):
                         moment_sign = "+"
                         if bond.beam_direction[0] != bond.beam_direction[1]:
                             moment_sign = "-"
-                        conditions += f"{bond.mc_cons[0][index]}{moment_sign}\\left({bond.mc_cons[1][index]}\\right) &= 0\\\\"
+                        conditions += f"{bond.mc_cons[0][index].replace('*','')}{moment_sign}\\left({bond.mc_cons[1][index].replace('*','')}\\right) &= 0\\\\"
                         conditions_mc += f"{bond.evaluated_cons_lhs[0][index]}\\left({bond.evaluated_cons_lhs[1][index]}\\right) &= 0\\\\"
                         print(conditions_mc)
                         print("Fertig")
@@ -138,48 +138,48 @@ def get_symbolic_condition_mc(bond):
                         sign_angle = "-"
                         if bond.cross_sections_default[0] != bond.cross_sections_default[1]:
                             sign_angle = ""
-                        conditions += bond.mc_cons[0][2] + "&=" + sign_angle + bond.mc_cons[1][2] + "\\\\"
+                        conditions += bond.mc_cons[0][2].replace('*','') + "&=" + sign_angle + bond.mc_cons[1][2].replace('*','') + "\\\\"
                         conditions_mc += bond.evaluated_cons_lhs[0][2] + "&=" + bond.evaluated_cons_rhs[1][2] + "\\\\"
                         print(conditions_mc)
                         print("Fertig")
                         for i in (0,1):
-                                conditions += bond.mc_cons[i][index] + "&=0 \\\\"
-                                conditions_mc += bond.evaluated_cons_lhs[i][index] + "&=" + bond.evaluated_cons_lhs[i][index] + "\\\\"
-                                print(conditions_mc)
-                                print("Fertig")
+                            conditions += bond.mc_cons[i][index].replace('*','') + "&=0 \\\\"
+                            conditions_mc += bond.evaluated_cons_lhs[i][index] + "&=" + bond.evaluated_cons_lhs[i][index] + "\\\\"
+                            print(conditions_mc)
+                            print("Fertig")
 
                 elif any(bond.with_bearing): # there is a bearing connection either on one side
                     if index != 0: # there is no condition for the shear force
                         if index != 3:
                             for i in (0,1):
-                                conditions += bond.mc_cons[i][index] + "&=0 \\\\"
+                                conditions += bond.mc_cons[i][index].replace('*','') + "&=0 \\\\"
                                 conditions_mc += bond.evaluated_cons_lhs[i][index] + "&=" + bond.evaluated_cons_rhs[i][index] + "\\\\"
                                 print(conditions_mc)
                                 print("Fertig")
                         else: # deflection conditions
                             for i in range(len(bond.with_bearing)):
                                 if bond.with_bearing[i]:
-                                    conditions += bond.mc_cons[not i][index] + "&=" + bond.mc_cons[i][index] +"\\\\"
+                                    conditions += bond.mc_cons[not i][index].replace('*','') + "&=" + bond.mc_cons[i][index].replace('*','') +"\\\\"
                                     conditions_mc += bond.evaluated_cons_lhs[not i][index] + "&=" + bond.evaluated_cons_rhs[i][index] + "\\\\"
                                     print(conditions_mc)
                                     print("Fertig")
                                     conditions += f"{translate_empty_minus((bond.beam_direction[i]))}w{bond.eva_pt[i]}&=0 \\\\"
                 else: # there is no bearing connection
                     if index == 0: # set shear force condition
-                        conditions += translate_empty_minus(bond.cross_sections_default[0]) + bond.mc_cons[0][index] + "&=" \
-                            + translate_empty_minus(bond.cross_sections_default[1]) + bond.mc_cons[1][index] + "\\\\"
+                        conditions += translate_empty_minus(bond.cross_sections_default[0]) + bond.mc_cons[0][index].replace('*','') + "&=" \
+                            + translate_empty_minus(bond.cross_sections_default[1]) + bond.mc_cons[1][index].replace('*','') + "\\\\"
                         
                         conditions_mc += f"{get_evaluated_condition_mc(sign_evaluation(bond.cross_sections_default[0])*bond.evaluated_cons_lhs[0][index]-sign_evaluation(bond.cross_sections_default[1])*bond.evaluated_cons_lhs[1][index])}" + "&=" + f"{get_evaluated_condition_mc(sign_evaluation(bond.cross_sections_default[0])*bond.evaluated_cons_rhs[0][index]-sign_evaluation(bond.cross_sections_default[1])*bond.evaluated_cons_rhs[1][index])}" + "\\\\" #Hier Mal Kucken
                         # print(conditions_mc)
                         # print("Fertig")
                     elif index == 1: # set moment conditions separately to zero
                         for i in (0,1):
-                            conditions += bond.mc_cons[i][index] + "&=0 \\\\"
+                            conditions += bond.mc_cons[i][index].replace('*','') + "&=0 \\\\"
                             conditions_mc += f"{get_evaluated_condition_mc(bond.evaluated_cons_lhs[i][index])}" + "&=" f"{get_evaluated_condition_mc(bond.evaluated_cons_rhs[i][index])}" + "\\\\" # passt
                             # print(conditions_mc)
                             # print("Fertig")
                     elif index == 3: # set the deflection condition
-                        conditions += bond.mc_cons[0][index] + "&=" + bond.mc_cons[1][index] + "\\\\"
+                        conditions += bond.mc_cons[0][index].replace('*','') + "&=" + bond.mc_cons[1][index].replace('*','') + "\\\\"
                         conditions_mc += f"{get_evaluated_condition_mc(bond.evaluated_cons_lhs[0][index]-bond.evaluated_cons_lhs[1][index])}" + "&=" + f"{get_evaluated_condition_mc(bond.evaluated_cons_rhs[0][index]-bond.evaluated_cons_rhs[1][index])}" + "\\\\"
                         # print(conditions_mc)
                         # print("Fertig")
@@ -189,7 +189,7 @@ def get_symbolic_condition_mc(bond):
                     # set the moment conditions
                     if index==1: # set the moment conditions
                         for i in (0,1):
-                            conditions += bond.mc_cons[i][index] + f"{translate_plus_minus(bond.moment_sign[i])}{bond.spring_constant}\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right)\\,{bond.rigid_lever} &= 0 \\\\"
+                            conditions += bond.mc_cons[i][index].replace('*','') + f"{translate_plus_minus(bond.moment_sign[i])}{bond.spring_constant}\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right)\\,{bond.rigid_lever} &= 0 \\\\"
                             conditions_mc += f"{-bond.evaluated_cons_lhs[0][index]}"+ f"{bond.evaluated_cons_lhs[0][index]}{bond.spring_constant}+{bond.evaluated_cons_lhs[1][index]}{bond.spring_constant}" + "&=" + f"{bond.evaluated_cons_rhs[0][index]}" + "\\\\"
                             print(conditions_mc)
 
@@ -203,18 +203,18 @@ def get_symbolic_condition_mc(bond):
                     for i in range(len(bond.with_bearing)):
                         if bond.with_bearing[i]:
                             if index==0: # set the respective shear force conditions
-                                conditions += f"{bond.mc_cons[not i][index]}{translate_plus_minus(not bond.cross_sections_default[not i])}{bond.spring_constant}\\,\\left(\\left[{bond.deflection[1]}\\right] \
+                                conditions += f"{bond.mc_cons[not i][index].replace('*','')}{translate_plus_minus(not bond.cross_sections_default[not i])}{bond.spring_constant}\\,\\left(\\left[{bond.deflection[1]}\\right] \
                                         -\\left[{bond.deflection[0]}\\right]\\right) &= 0 \\\\"
                                 conditions_mc += f"{bond.evaluated_cons_lhs[not i][index]}{bond.spring_constant}\\  &=" +f"{bond.evaluated_cons_rhs[not i][index]}"
                                 print(conditions_mc)
                                 print("Fertig")
 
                             if index==1: # set the moment conditions
-                                conditions += bond.mc_cons[not i][index]  +  "&= 0 \\\\"
+                                conditions += bond.mc_cons[not i][index].replace('*','')  +  "&= 0 \\\\"
                                 conditions_mc += bond.evaluated_cons_lhs[not i][index] + "&=" +  bond.evaluated_cons_rhs[not i][index] + "\\\\"
                                 print(conditions_mc)
                                 print("Fertig")
-                                conditions += bond.mc_cons[i][index]+ f"{translate_plus_minus(bond.moment_sign[i])}{bond.spring_constant}\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right)\\,{bond.rigid_lever} &= 0 \\\\"
+                                conditions += bond.mc_cons[i][index].replace('*','') + f"{translate_plus_minus(bond.moment_sign[i])}{bond.spring_constant}\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right)\\,{bond.rigid_lever} &= 0 \\\\"
                                 conditions_mc += bond.evaluated_cons_lhs[i][index] + f"{bond.spring_constant}"+"&=" + f"{bond.evaluated_cons_rhs[i][index]}" + "\\\\"
                                 print(conditions_mc)
                                 print("Fertig")
@@ -226,12 +226,12 @@ def get_symbolic_condition_mc(bond):
                 else: # there is no bearing connection
                     for i in (0,1):
                         if index == 1: # moment conditions are set separately to zero
-                            conditions += bond.mc_cons[i][index] + "&=0 \\\\"
+                            conditions += bond.mc_cons[i][index].replace('*','') + "&=0 \\\\"
                             conditions_mc += f"{bond.evaluated_cons_lhs[i][index]}" + "&="+ f"{bond.evaluated_cons_rhs[i][index]}" +" \\\\"
                             print(conditions_mc)
                             print("Fertig")
                         else: # shear forces are set separately to the spring force; with cross_sections_default one considers the direction/position of the coordinate system
-                            conditions += f"{bond.mc_cons[i][index]}&={translate_plus_minus(not bond.cross_sections_default[i])} \
+                            conditions += f"{bond.mc_cons[i][index].replace('*','')}&={translate_plus_minus(not bond.cross_sections_default[i])} \
                                 {bond.spring_constant}\\,\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right) &= 0 \\\\"
                             conditions_mc += f"{bond.evaluated_cons_lhs[i][index]}{translate_plus_minus(not bond.cross_sections_default[i])} \
                                 {bond.spring_constant}\\,\\left(\\left[{get_evaluated_condition_mc(bond.evaluated_cons_lhs[1][3])}\\right]-\\left[{get_evaluated_condition_mc(bond.evaluated_cons_lhs[0][3])}\\right]\\right)&=\
@@ -252,7 +252,7 @@ def get_symbolic_condition_mc(bond):
 
             elif isinstance(bond, RigidBeamMC):
                 if index == 0: # consider sign of cross sections default for shear forces
-                    conditions += f"{translate_empty_minus(bond.cross_sections_default[0])}{bond.mc_cons[0][index]}&={translate_empty_minus(bond.cross_sections_default[1])}{bond.mc_cons[1][index]} \\\\"
+                    conditions += f"{translate_empty_minus(bond.cross_sections_default[0])}{bond.mc_cons[0][index].replace('*','')}&={translate_empty_minus(bond.cross_sections_default[1])}{bond.mc_cons[1][index].replace('*','')} \\\\"
                     conditions_mc += f"{bond.evaluated_cons_lhs[0][index]}&={bond.evaluated_cons_rhs[1][index]} \\\\"
                     print(conditions_mc)
                     print("Fertig")
@@ -260,7 +260,7 @@ def get_symbolic_condition_mc(bond):
                     sign = ""
                     if bond.beam_direction[0] != bond.beam_direction[1]:
                         sign = "-"
-                    conditions += f"{sign}{bond.mc_cons[0][index]}&={bond.mc_cons[1][index]} \\\\"
+                    conditions += f"{sign}{bond.mc_cons[0][index].replace('*','')}&={bond.mc_cons[1][index].replace('*','')} \\\\"
                     conditions_mc += f"{bond.evaluated_cons_lhs[0][index]}&={bond.evaluated_cons_rhs[1][index]} \\\\"
                     print(conditions_mc)
                     print("Fertig")
@@ -268,12 +268,12 @@ def get_symbolic_condition_mc(bond):
                     sign = ""
                     if bond.cross_sections_default[0] != bond.cross_sections_default[1]:
                         sign = "-"
-                    conditions += f"{bond.mc_cons[0][index]}&={sign}{bond.mc_cons[1][index]} \\\\"
+                    conditions += f"{bond.mc_cons[0][index].replace('*','')}&={sign}{bond.mc_cons[1][index].replace('*','')} \\\\"
                     conditions_mc += f"{bond.evaluated_cons_lhs[0][index]}&={bond.evaluated_cons_rhs[1][index]} \\\\"
                     print(conditions_mc)
                     print("Fertig")
                 else: # index == 3; for the deflection consider the beam direction for the sign
-                    conditions +=  f"{bond.mc_cons[0][index]}&={bond.mc_cons[1][index]} \\\\"
+                    conditions +=  f"{bond.mc_cons[0][index].replace('*','')}&={bond.mc_cons[1][index].replace('*','')} \\\\"
                     conditions_mc += f"{bond.evaluated_cons_lhs[0][index]}&={bond.evaluated_cons_rhs[1][index]} \\\\"
                     print(conditions_mc)
                     print("Fertig")
@@ -290,12 +290,12 @@ def get_symbolic_condition_mc(bond):
                 if not bond.rigid_lever: # if there is a rigid beam at the bearing
                     for i in (0,1):
                         if index == 1: # moment conditions are set separately to zero
-                            conditions += bond.mc_cons[i][index] + "&=0 \\\\"
+                            conditions += bond.mc_cons[i][index].replace('*','') + "&=0 \\\\"
                             conditions_mc += bond.evaluated_cons_lhs[i][index] + "&=0 \\\\"
                             print(conditions_mc)
                             print("Fertig")
                         if index == 3: # deflection conditions are set separately to zero
-                            conditions += bond.mc_cons[i][index] + "&=0 \\\\"
+                            conditions += bond.mc_cons[i][index].replace('*','') + "&=0 \\\\"
                             conditions_mc += bond.evaluated_cons_lhs[i][index] + "&=0 \\\\"
                             print(conditions_mc)
                             print("Fertig")
@@ -304,7 +304,7 @@ def get_symbolic_condition_mc(bond):
                         sign = ""
                         if bond.beam_direction[0] != bond.beam_direction[1]:
                             sign = "-" 
-                        conditions += sign + bond.mc_cons[0][index] + "&=" + bond.mc_cons[1][index] + "\\\\"
+                        conditions += sign + bond.mc_cons[0][index].replace('*','') + "&=" + bond.mc_cons[1][index].replace('*','') + "\\\\"
                         conditions_mc += bond.evaluated_cons_lhs[0][index] + "&=" + bond.evaluated_cons_rhs[1][index]+ "\\\\"
                         print(conditions_mc)
                         print("Fertig")
@@ -313,12 +313,12 @@ def get_symbolic_condition_mc(bond):
                         sign_angle = ""
                         if bond.cross_sections_default[0] != bond.cross_sections_default[1]:
                             sign_angle = "-"
-                        conditions += bond.mc_cons[0][2] + "&=" + sign_angle + bond.mc_cons[1][2] + "\\\\"
+                        conditions += bond.mc_cons[0][2].replace('*','') + "&=" + sign_angle + bond.mc_cons[1][2].replace('*','') + "\\\\"
                         conditions_mc += bond.evaluated_cons_lhs[0][2] + "&=" + bond.evaluated_cons_rhs[1][2]+ "\\\\"
                         print(conditions_mc)
                         print("Fertig")
                         for i in (0,1):# deflection conditions are set separately to zero
-                            conditions += bond.mc_cons[i][index] + "&=0 \\\\"   
+                            conditions += bond.mc_cons[i][index].replace('*','') + "&=0 \\\\"   
                             conditions_mc += bond.evaluated_cons_lhs[i][index]+ "&=0 \\\\"
                             print(conditions_mc)
                             print("Fertig")
