@@ -341,8 +341,10 @@ def determine_matching_conditions(beam, bond):
                 bond.matching_conditions[id_mc][0]["value"].append([sign, "linear_spring"])
                 bond.mc_cons[id_mc][0] += f"{translate_plus_minus((sign))}{connection.spring_constant}\\,w{bond.eva_pt[id_mc]}"
                 
-                bond.evaluated_cons_lhs[id_mc][0]=-beam.evaluate_ansatz_constants(0,x_position)
-                bond.evaluated_cons_rhs[id_mc][0]=beam.evaluate_ansatz_line_load(0, x_position)
+                bond.evaluated_cons_lhs[id_mc][0] += sign_evaluation(sign)*connection.spring_constant*beam.evaluate_ansatz_constants(3, x_position)/beam.symbolic_bending_stiffness
+                bond.evaluated_cons_rhs[id_mc][0] += sign_evaluation((not sign))*connection.spring_constant*beam.evaluate_ansatz_line_load(3, x_position)/beam.symbolic_bending_stiffness
+                # bond.evaluated_cons_lhs[id_mc][0]=-beam.evaluate_ansatz_constants(0,x_position)
+                # bond.evaluated_cons_rhs[id_mc][0]=beam.evaluate_ansatz_line_load(0, x_position)
 
                 # if the bond is a rigid beam as matching condition, a linear spring is also (and only on the right side of the rigid beam) accounted for the moment condition
                 if isinstance(bond, RigidBeamMC) and position == bond.position_list[1]: # the appearing spring force is accounted a the shear force and must not be incorporated for the moment condition - the reference point is the "left" side of the rigid beam
@@ -379,8 +381,8 @@ def determine_matching_conditions(beam, bond):
                     sign = not sign # the sign needs to be changed, when the moment is negative
                 bond.matching_conditions[id_mc][1]["value"].append([sign, "single_moment"])
                 bond.mc_cons[id_mc][1] += f"{translate_plus_minus(sign)}{connection.symbol}"
-                bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
-                bond.evaluated_cons_rhs[id_mc][1]=beam.evaluate_ansatz_line_load(1, x_position)
+                # bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
+                bond.evaluated_cons_rhs[id_mc][1]=sign_evaluation((not sign))*connection.symbol
 
             elif isinstance(connection, SingleForce):
                 if not id_mc:
@@ -392,8 +394,8 @@ def determine_matching_conditions(beam, bond):
                 bond.matching_conditions[id_mc][0]["value"].append([sign, "single_force"])
                 bond.mc_cons[id_mc][0] += f"{translate_plus_minus(sign)}{connection.symbol}"
 
-                bond.evaluated_cons_lhs[id_mc][0]=-beam.evaluate_ansatz_constants(0,x_position)
-                bond.evaluated_cons_rhs[id_mc][0]=beam.evaluate_ansatz_line_load(0, x_position)
+                # bond.evaluated_cons_lhs[id_mc][0]=-beam.evaluate_ansatz_constants(0,x_position)
+                bond.evaluated_cons_rhs[id_mc][0]=sign_evaluation((not sign))*connection.symbol
                 
                 # if the bond is a rigid beam as matching condition, a linear spring is also (and only on the right side of the rigid beam) accounted for the moment condition
                 if isinstance(bond, RigidBeamMC) and position == bond.position_list[1]: # the appearing spring force is accounted a the shear force and must not be incorporated for the moment condition - the reference point is the "left" side of the rigid beam
