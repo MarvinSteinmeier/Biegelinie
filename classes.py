@@ -63,8 +63,8 @@ def determine_boundary_conditions(beam, bond):
         if entry:
             bond.bc_cons[index] += f"{bond.eva_pt}"
             if index != 3:
-                bond.evaluated_cons_lhs[index] = -beam.evaluate_ansatz_constants(index, x_position)
-                bond.evaluated_cons_rhs[index] = beam.evaluate_ansatz_line_load(index, x_position)
+                bond.evaluated_cons_lhs[index] = beam.evaluate_ansatz_constants(index, x_position)
+                bond.evaluated_cons_rhs[index] = -beam.evaluate_ansatz_line_load(index, x_position)
             else:
                 bond.evaluated_cons_lhs[index] = beam.evaluate_ansatz_constants(index, x_position)#/beam.symbolic_bending_stiffness
                 bond.evaluated_cons_rhs[index] = -beam.evaluate_ansatz_line_load(index, x_position)/beam.symbolic_bending_stiffness
@@ -81,8 +81,8 @@ def determine_boundary_conditions(beam, bond):
                                 if isinstance(con, LinearSpring):
                                     if position != pos:
                                         bond.bc_cons[1] += f"{translate_plus_minus(not sign_cross_section)}{con.spring_constant}\\,\\varphi{bond.eva_pt}{{{connection.length}}}^2"
-                                        bond.evaluated_cons_lhs[1] += -sign_evaluation((not sign_cross_section))*con.spring_constant*beam.evaluate_ansatz_constants(2, bond.evaluation)*connection.length**2
-                                        bond.evaluated_cons_rhs[1] += sign_evaluation((not sign_cross_section))*con.spring_constant*beam.evaluate_ansatz_line_load(2, bond.evaluation)*connection.length**2
+                                        bond.evaluated_cons_lhs[1] += sign_evaluation((not sign_cross_section))*con.spring_constant*beam.evaluate_ansatz_constants(2, bond.evaluation)*connection.length**2
+                                        bond.evaluated_cons_rhs[1] += -sign_evaluation((not sign_cross_section))*con.spring_constant*beam.evaluate_ansatz_line_load(2, bond.evaluation)*connection.length**2
                                 elif isinstance(con, SingleForce):
                                     if position != pos:
                                         if all([con.positive, sign_cross_section]) or all([con.positive, not sign_cross_section]):
@@ -92,16 +92,16 @@ def determine_boundary_conditions(beam, bond):
                                         if not beam.coordinate_system_orientation:  # the sign needs to be changed, when the orientation of the z-axis is upwards
                                             sign_force = not sign_force 
                                         bond.bc_cons[1] += f"{translate_plus_minus(sign_force)}{con.symbol}\\,{connection.length}"
-                                        bond.evaluated_cons_rhs[1] += sign_evaluation((not sign_force))*con.symbol*connection.length
+                                        bond.evaluated_cons_rhs[1] += -sign_evaluation((not sign_force))*con.symbol*connection.length
                                 else:
                                     extend_boundary_condition(beam, bond, con, sign_cross_section)
                 else:  # rigid beam is "inside"
                     bond.bc_cons[1] += f"{translate_plus_minus((not sign_cross_section))}Q{bond.eva_pt}\\,{connection.length}"
                     bond.bc_cons[3] += f"{translate_plus_minus((sign_cross_section))}{connection.length}\\,\\varphi{bond.eva_pt}"
-                    bond.evaluated_cons_lhs[1] += -sign_evaluation((not sign_cross_section))*beam.evaluate_ansatz_constants(0, bond.evaluation)*connection.length
-                    bond.evaluated_cons_rhs[1] += sign_evaluation((not sign_cross_section))*beam.evaluate_ansatz_line_load(0, bond.evaluation)*connection.length
-                    bond.evaluated_cons_lhs[3] += -sign_evaluation((not sign_cross_section))*connection.length*beam.evaluate_ansatz_constants(2, bond.evaluation)
-                    bond.evaluated_cons_rhs[3] += sign_evaluation((not sign_cross_section))*connection.length*beam.evaluate_ansatz_line_load(2, bond.evaluation)
+                    bond.evaluated_cons_lhs[1] += sign_evaluation((not sign_cross_section))*beam.evaluate_ansatz_constants(0, bond.evaluation)*connection.length
+                    bond.evaluated_cons_rhs[1] += -sign_evaluation((not sign_cross_section))*beam.evaluate_ansatz_line_load(0, bond.evaluation)*connection.length
+                    bond.evaluated_cons_lhs[3] += sign_evaluation((not sign_cross_section))*connection.length*beam.evaluate_ansatz_constants(2, bond.evaluation)
+                    bond.evaluated_cons_rhs[3] += -sign_evaluation((not sign_cross_section))*connection.length*beam.evaluate_ansatz_line_load(2, bond.evaluation)
                     for pos in connection.position_list:
                         for con in pos.connection_list:
                             if not con.in_condition_considered:
@@ -110,7 +110,7 @@ def determine_boundary_conditions(beam, bond):
                                     if position == pos:
                                         bond.bc_cons[1] += f"{translate_plus_minus(True)}{con.spring_constant}\\,w{bond.eva_pt}\\,{connection.length}"
                                         bond.evaluated_cons_lhs[1] += sign_evaluation(True)*con.spring_constant*beam.evaluate_ansatz_constants(3, bond.evaluation)*connection.length#/beam.symbolic_bending_stiffness
-                                        bond.evaluated_cons_rhs[1] += -sign_evaluation(True)*con.spring_constant*beam.evaluate_ansatz_line_load(3, bond.evaluation)*connection.length/beam.symbolic_bending_stiffness
+                                        bond.evaluated_cons_rhs[1] += sign_evaluation(True)*con.spring_constant*beam.evaluate_ansatz_line_load(3, bond.evaluation)*connection.length/beam.symbolic_bending_stiffness
                                 elif isinstance(con, SingleForce):
                                     if position == pos:
                                         if all([con.positive, sign_cross_section]) or all([con.positive, not sign_cross_section]):
@@ -132,8 +132,8 @@ def extend_boundary_condition(beam, bond, connection, sign_cross_section):
     
     if isinstance(connection, TorsionalSpring):
         bond.bc_cons[1] += f"{translate_plus_minus((not sign_cross_section))}{connection.spring_constant}\\,\\varphi{bond.eva_pt}"
-        bond.evaluated_cons_lhs[1] += -sign_evaluation((not sign_cross_section))*connection.spring_constant*beam.evaluate_ansatz_constants(2, bond.evaluation)
-        bond.evaluated_cons_rhs[1] += sign_evaluation((not sign_cross_section))*connection.spring_constant*beam.evaluate_ansatz_line_load(2, bond.evaluation)
+        bond.evaluated_cons_lhs[1] += sign_evaluation((not sign_cross_section))*connection.spring_constant*beam.evaluate_ansatz_constants(2, bond.evaluation)
+        bond.evaluated_cons_rhs[1] += -sign_evaluation((not sign_cross_section))*connection.spring_constant*beam.evaluate_ansatz_line_load(2, bond.evaluation)
     elif isinstance(connection, LinearSpring):
         bond.bc_cons[0] += f"{translate_plus_minus((not sign_cross_section))}{connection.spring_constant}\\,w{bond.eva_pt}"
         bond.evaluated_cons_lhs[0] += sign_evaluation((not sign_cross_section))*connection.spring_constant*beam.evaluate_ansatz_constants(3, bond.evaluation)#/beam.symbolic_bending_stiffness
@@ -341,7 +341,7 @@ def determine_matching_conditions(beam, bond):
                 bond.matching_conditions[id_mc][0]["value"].append([sign, "linear_spring"])
                 bond.mc_cons[id_mc][0] += f"{translate_plus_minus((sign))}{connection.spring_constant}\\,w{bond.eva_pt[id_mc]}"
                 
-                bond.evaluated_cons_lhs[id_mc][0] += sign_evaluation(sign)*connection.spring_constant*beam.evaluate_ansatz_constants(3, x_position)/beam.symbolic_bending_stiffness
+                bond.evaluated_cons_lhs[id_mc][0] += sign_evaluation(sign)*connection.spring_constant*beam.evaluate_ansatz_constants(3, x_position)#/beam.symbolic_bending_stiffness
                 bond.evaluated_cons_rhs[id_mc][0] += sign_evaluation((not sign))*connection.spring_constant*beam.evaluate_ansatz_line_load(3, x_position)/beam.symbolic_bending_stiffness
                 # bond.evaluated_cons_lhs[id_mc][0]=-beam.evaluate_ansatz_constants(0,x_position)
                 # bond.evaluated_cons_rhs[id_mc][0]=beam.evaluate_ansatz_line_load(0, x_position)
@@ -382,7 +382,7 @@ def determine_matching_conditions(beam, bond):
                 bond.matching_conditions[id_mc][1]["value"].append([sign, "single_moment"])
                 bond.mc_cons[id_mc][1] += f"{translate_plus_minus(sign)}{connection.symbol}"
                 # bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
-                bond.evaluated_cons_rhs[id_mc][1]=sign_evaluation((not sign))*connection.symbol
+                bond.evaluated_cons_rhs[id_mc][1]=sign_evaluation((not sign))*connection.symbol+beam.evaluate_ansatz_line_load(1,x_position)
 
             elif isinstance(connection, SingleForce):
                 if not id_mc:
@@ -395,15 +395,15 @@ def determine_matching_conditions(beam, bond):
                 bond.mc_cons[id_mc][0] += f"{translate_plus_minus(sign)}{connection.symbol}"
 
                 # bond.evaluated_cons_lhs[id_mc][0]=-beam.evaluate_ansatz_constants(0,x_position)
-                bond.evaluated_cons_rhs[id_mc][0]=sign_evaluation((not sign))*connection.symbol
+                bond.evaluated_cons_rhs[id_mc][0]=sign_evaluation((not sign))*connection.symbol+beam.evaluate_ansatz_line_load(0,x_position)
                 
                 # if the bond is a rigid beam as matching condition, a linear spring is also (and only on the right side of the rigid beam) accounted for the moment condition
                 if isinstance(bond, RigidBeamMC) and position == bond.position_list[1]: # the appearing spring force is accounted a the shear force and must not be incorporated for the moment condition - the reference point is the "left" side of the rigid beam
                     bond.matching_conditions[id_mc][1]["value"].append([not sign, "single_force"])
                     bond.mc_cons[id_mc][1] += f"{translate_plus_minus((not sign))}{connection.symbol}\\,{bond.length}"
                     
-                    bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
-                    bond.evaluated_cons_rhs[id_mc][1]=beam.evaluate_ansatz_line_load(1, x_position)
+                    #bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
+                    bond.evaluated_cons_rhs[id_mc][1]=sign_evaluation((not sign))*connection.symbol+beam.evaluate_ansatz_line_load(1,x_position)
 
             elif isinstance(connection, RigidBeam):
                 # if rigid:
@@ -444,20 +444,20 @@ def determine_matching_conditions(beam, bond):
                     if isinstance(bond, LinearSpringMC): # if the bond is a linear spring mc, update the deflection (at the linear spring)
                         bond.mc_cons[id_mc][3] = f"{translate_plus_minus((not sign_rigid))}{connection.length}\\,\\varphi{bond.eva_pt[id_mc]}"
                         
-                        bond.evaluated_cons_lhs[id_mc][3]=-beam.evaluate_ansatz_constants(3,x_position)
-                        bond.evaluated_cons_rhs[id_mc][3]=beam.evaluate_ansatz_line_load(3, x_position)
+                        #bond.evaluated_cons_lhs[id_mc][3]=-beam.evaluate_ansatz_constants(3,x_position)
+                        bond.evaluated_cons_rhs[id_mc][3]=sign_evaluation((not sign_rigid))*connection.length+beam.evaluate_ansatz_line_load(3,x_position)
 
                         bond.deflection[id_mc] = bond.mc_cons[id_mc][3]
                 else: # if there is no bearing connection that set the shear force based on sign rigid
                     bond.mc_cons[id_mc][1] += f"{translate_plus_minus((sign_rigid))}Q{bond.eva_pt[id_mc]}\\,{connection.length}"
 
                     bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
-                    bond.evaluated_cons_rhs[id_mc][1]=beam.evaluate_ansatz_line_load(1, x_position)
+                    bond.evaluated_cons_rhs[id_mc][1]=-beam.evaluate_ansatz_line_load(1, x_position)
 
                     bond.mc_cons[id_mc][3] += f"{translate_plus_minus((not sign_rigid))}{connection.length}\\,\\varphi{bond.eva_pt[id_mc]}"
                     
                     bond.evaluated_cons_lhs[id_mc][3]=-beam.evaluate_ansatz_constants(3,x_position)
-                    bond.evaluated_cons_rhs[id_mc][3]=beam.evaluate_ansatz_line_load(3, x_position)
+                    bond.evaluated_cons_rhs[id_mc][3]=-beam.evaluate_ansatz_line_load(3, x_position)
 
 
                 bond.matching_conditions[id_mc][3]["value"].append([not sign_rigid, "rigid_beam"])
@@ -485,14 +485,14 @@ def determine_matching_conditions(beam, bond):
                                    
                                     bond.mc_cons[id_mc][0] += f"{translate_plus_minus(sign_linear_spring)}{con.spring_constant}\\,w{bond.eva_pt[id_mc]}"
                                    
-                                    bond.evaluated_cons_lhs[id_mc][0]=-beam.evaluate_ansatz_constants(0,x_position)
-                                    bond.evaluated_cons_rhs[id_mc][0]=beam.evaluate_ansatz_line_load(0, x_position)
+                                    #bond.evaluated_cons_lhs[id_mc][0]=-beam.evaluate_ansatz_constants(0,x_position)
+                                    bond.evaluated_cons_rhs[id_mc][0]=sign_evaluation((sign_linear_spring))*con.spring_constant+beam.evaluate_ansatz_line_load(0,x_position)
                                    
                                     # append the moment due to the linear spring to the moment condition
                                     bond.mc_cons[id_mc][1] += f"{translate_plus_minus(True)}{con.spring_constant}\\,w{bond.eva_pt[id_mc]}\\,{connection.length}"
                                     
-                                    bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
-                                    bond.evaluated_cons_rhs[id_mc][1]=beam.evaluate_ansatz_line_load(1, x_position)
+                                    #bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
+                                    bond.evaluated_cons_rhs[id_mc][1]=sign_evaluation((True))*con.spring_constant+beam.evaluate_ansatz_line_load(1,x_position)
                                 
                                 else: # the linear spring is directly at the bond
                                     addition_for_shear_force = "_rigid" 
@@ -505,8 +505,8 @@ def determine_matching_conditions(beam, bond):
                                     # append the shear force due to the linear spring to the shear force condition
                                     bond.mc_cons[id_mc][0] += f"{translate_plus_minus(sign_linear_spring)}{con.spring_constant}\\,\\left[{translate_plus_minus((bond.beam_direction[id_mc]))}{bond.mc_cons[id_mc][3]['condition']}\\right]"
                                     
-                                    bond.evaluated_cons_lhs[id_mc][0]=-beam.evaluate_ansatz_constants(0,x_position)
-                                    bond.evaluated_cons_rhs[id_mc][0]=beam.evaluate_ansatz_line_load(0, x_position)
+                                    #bond.evaluated_cons_lhs[id_mc][0]=-beam.evaluate_ansatz_constants(0,x_position)
+                                    bond.evaluated_cons_rhs[id_mc][0]=sign_evaluation((sign_linear_spring))*con.spring_constant+beam.evaluate_ansatz_line_load(0,x_position)
                                 
                                 bond.matching_conditions[id_mc][0]["value"].append([sign_linear_spring, "linear_spring"+addition_for_shear_force])
                                 
@@ -520,9 +520,8 @@ def determine_matching_conditions(beam, bond):
                                 bond.matching_conditions[id_mc][0]["value"].append([sign_force, "single_force"])
                                 bond.mc_cons[id_mc][0] += f"{translate_plus_minus(sign_force)}{con.symbol}"
 
-                                bond.evaluated_cons_lhs[id_mc][0]=-beam.evaluate_ansatz_constants(0,x_position)
-                                bond.evaluated_cons_rhs[id_mc][0]=beam.evaluate_ansatz_line_load(0, x_position)
-
+                                #bond.evaluated_cons_lhs[id_mc][0]=-beam.evaluate_ansatz_constants(0,x_position)
+                                bond.evaluated_cons_rhs[id_mc][0]=sign_evaluation(sign_force)*con.symbol+beam.evaluate_ansatz_line_load(0,x_position)
                                 sign_moment = not con.positive
                                 if not beam.coordinate_system_orientation:
                                     sign_moment = not sign_moment
@@ -530,14 +529,14 @@ def determine_matching_conditions(beam, bond):
                                     bond.matching_conditions[id_mc][1]["value"].append([sign_moment, "single_force"])
                                     bond.mc_cons[id_mc][1] += f"{translate_plus_minus(sign_moment)}{con.symbol}\\,{connection.length}"
                                     #
-                                    bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
-                                    bond.evaluated_cons_rhs[id_mc][1]=beam.evaluate_ansatz_line_load(1, x_position)
+                                    #bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
+                                    bond.evaluated_cons_rhs[id_mc][1]=sign_evaluation(sign_force)*con.symbol+beam.evaluate_ansatz_line_load(1,x_position)
                                 else:
                                     if any(isinstance(conne, BearingConnection) for conne in position.connection_list):
                                         bond.mc_cons[id_mc][1] += f"{translate_plus_minus(not sign_moment)}{con.symbol}\\,{connection.length}"
 
-                                        bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
-                                        bond.evaluated_cons_rhs[id_mc][1]=beam.evaluate_ansatz_line_load(1, x_position)
+                                        #bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
+                                        bond.evaluated_cons_rhs[id_mc][1]=sign_evaluation(sign_force)*con.symbol+beam.evaluate_ansatz_line_load(1,x_position)
                                         
                             elif isinstance(con, TorsionalSpring):
                                 sign_torsional_spring = sign_rigid
@@ -546,8 +545,8 @@ def determine_matching_conditions(beam, bond):
                                 bond.matching_conditions[id_mc][1]["value"].append([sign_torsional_spring, "torsional_spring"])
                                 bond.mc_cons[id_mc][1] += f"{translate_plus_minus((sign_torsional_spring))}{con.spring_constant}\\,\\varphi{bond.eva_pt[id_mc]}"
                                 
-                                bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
-                                bond.evaluated_cons_rhs[id_mc][1]=beam.evaluate_ansatz_line_load(1, x_position)
+                                #bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
+                                bond.evaluated_cons_rhs[id_mc][1]=sign_evaluation(sign_torsional_spring)*con.spring_constant+beam.evaluate_ansatz_line_load(1,x_position)
 
                             elif isinstance(con, SingleMoment):
                                 if not id_mc:
@@ -563,8 +562,8 @@ def determine_matching_conditions(beam, bond):
 
                                 bond.matching_conditions[id_mc][1]["value"].append([sign_moment, "single_moment"])
                                 bond.mc_cons[id_mc][1] += f"{translate_plus_minus(sign_moment)}{con.symbol}"
-                                bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
-                                bond.evaluated_cons_rhs[id_mc][1]=beam.evaluate_ansatz_line_load(1, x_position)
+                                #bond.evaluated_cons_lhs[id_mc][1]=-beam.evaluate_ansatz_constants(1,x_position)
+                                bond.evaluated_cons_rhs[id_mc][1]=sign_evaluation(sign_moment)*con.symbol+beam.evaluate_ansatz_line_load(1,x_position)
 
                             elif isinstance(con, BearingConnection):
                                 bond.with_bearing[id_mc] = True
@@ -756,7 +755,7 @@ class Beam(Truss):
         self.coordinate_system_position = coordinate_system_position
         self.coordinate_system_orientation = coordinate_system_orientation
         self.thermal_load = thermal_load #Variablen für denn Thermischen Belastungsfall
-        self.material_alpha= sp.symbols("\\alpha*\\nabla{T}")
+        self.material_alpha= sp.symbols("\\alpha\\nabla{T}")
         self.nablaT = sp.symbols("\\nabla")
         self.Temperatur = sp.symbols("T")
 
@@ -863,10 +862,22 @@ class Beam(Truss):
         if index == 0:
             return (self.shear_force.subs(x_i, position))
         elif index == 1:
+            if self.thermal_load:
+                self.moment_constants2 = self.moment
+                return (self.moment_constants2.subs(x_i, position))
+            else:
                 return (self.moment.subs(x_i, position))
         elif index == 2:
+            if self.thermal_load:
+                self.angle_phi_constants2= self.angle_phi + self.thermalAngle
+                return (self.angle_phi_constants2.subs(x_i, position))
+            else:
                 return (self.angle_phi.subs(x_i, position))
         else: # index == 3
+            if self.thermal_load:
+                self.deflection_constants2 = self.deflection + self.thermalDeflection
+                return (self.deflection_constants2.subs(x_i, position))
+            else:
                 return (self.deflection.subs(x_i, position))
         
     def evaluate_ansatz_constants(self, index, position):
@@ -874,22 +885,10 @@ class Beam(Truss):
         if index == 0:
             return (self.shear_force_constants.subs(x_i, position))
         elif index == 1:
-            if self.thermal_load:
-                self.moment_constants2 = self.moment_constants + self.thermalMoment
-                return (self.moment_constants2.subs(x_i, position))
-            else:
                 return (self.moment_constants.subs(x_i, position))
         elif index == 2:
-            if self.thermal_load:
-                self.angle_phi_constants2= self.angle_phi_constants + self.thermalAngle
-                return (self.angle_phi_constants2.subs(x_i, position))
-            else:
                 return (self.angle_phi_constants.subs(x_i, position))
         else: # index == 3
-            if self.thermal_load:
-                self.deflection_constants2 = self.deflection_constants + self.thermalDeflection
-                return (self.deflection_constants2.subs(x_i, position))
-            else:
                 return (self.deflection_constants.subs(x_i, position))
         
 

@@ -169,13 +169,13 @@ def get_symbolic_condition_mc(bond):
                         conditions += translate_empty_minus(bond.cross_sections_default[0]) + bond.mc_cons[0][index].replace('*','') + "&=" \
                             + translate_empty_minus(bond.cross_sections_default[1]) + bond.mc_cons[1][index].replace('*','') + "\\\\"
                         
-                        conditions_mc += f"{get_evaluated_condition_mc(sign_evaluation(bond.cross_sections_default[0])*bond.evaluated_cons_lhs[0][index]-sign_evaluation(bond.cross_sections_default[1])*bond.evaluated_cons_lhs[1][index])}" + "&=" + f"{get_evaluated_condition_mc(sign_evaluation(bond.cross_sections_default[0])*bond.evaluated_cons_rhs[0][index]-sign_evaluation(bond.cross_sections_default[1])*bond.evaluated_cons_rhs[1][index])}" + "\\\\" #Hier Mal Kucken
+                        conditions_mc += f"{get_evaluated_condition_mc(sign_evaluation(bond.cross_sections_default[0])*-bond.evaluated_cons_lhs[0][index]-sign_evaluation(bond.cross_sections_default[1])*-bond.evaluated_cons_lhs[1][index])}" + "&=" + f"{get_evaluated_condition_mc(sign_evaluation(bond.cross_sections_default[0])*-bond.evaluated_cons_rhs[0][index]-sign_evaluation(bond.cross_sections_default[1])*bond.evaluated_cons_rhs[1][index])}" + "\\\\" #Hier Mal Kucken
                         # print(conditions_mc)
                         # print("Fertig")
                     elif index == 1: # set moment conditions separately to zero
                         for i in (0,1):
                             conditions += bond.mc_cons[i][index].replace('*','') + "&=0 \\\\"
-                            conditions_mc += f"{get_evaluated_condition_mc(bond.evaluated_cons_lhs[i][index])}" + "&=" f"{get_evaluated_condition_mc(bond.evaluated_cons_rhs[i][index])}" + "\\\\" # passt
+                            conditions_mc += f"{get_evaluated_condition_mc(-bond.evaluated_cons_lhs[i][index])}" + "&=" f"{get_evaluated_condition_mc(-bond.evaluated_cons_rhs[i][index])}" + "\\\\" # passt
                             # print(conditions_mc)
                             # print("Fertig")
                     elif index == 3: # set the deflection condition
@@ -189,7 +189,7 @@ def get_symbolic_condition_mc(bond):
                     # set the moment conditions
                     if index==1: # set the moment conditions
                         for i in (0,1):
-                            conditions += bond.mc_cons[i][index].replace('*','') + f"{translate_plus_minus(bond.moment_sign[i])}{bond.spring_constant}\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right)\\,{bond.rigid_lever} &= 0 \\\\"
+                            conditions += bond.mc_cons[i][index].replace('*','') + f"{translate_plus_minus(bond.moment_sign[i])}{bond.spring_constant}\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right)\\,{bond.rigid_lever} \\\\"
                             conditions_mc += f"{-bond.evaluated_cons_lhs[0][index]}"+ f"{bond.evaluated_cons_lhs[0][index]}{bond.spring_constant}+{bond.evaluated_cons_lhs[1][index]}{bond.spring_constant}" + "&=" + f"{bond.evaluated_cons_rhs[0][index]}" + "\\\\"
                             print(conditions_mc)
 
@@ -204,17 +204,17 @@ def get_symbolic_condition_mc(bond):
                         if bond.with_bearing[i]:
                             if index==0: # set the respective shear force conditions
                                 conditions += f"{bond.mc_cons[not i][index].replace('*','')}{translate_plus_minus(not bond.cross_sections_default[not i])}{bond.spring_constant}\\,\\left(\\left[{bond.deflection[1]}\\right] \
-                                        -\\left[{bond.deflection[0]}\\right]\\right) &= 0 \\\\"
+                                        -\\left[{bond.deflection[0]}\\right]\\right) \\\\"
                                 conditions_mc += f"{bond.evaluated_cons_lhs[not i][index]}{bond.spring_constant}\\  &=" +f"{bond.evaluated_cons_rhs[not i][index]}"
                                 print(conditions_mc)
                                 print("Fertig")
 
                             if index==1: # set the moment conditions
-                                conditions += bond.mc_cons[not i][index].replace('*','')  +  "&= 0 \\\\"
+                                conditions += bond.mc_cons[not i][index].replace('*','')  +  " \\\\"
                                 conditions_mc += bond.evaluated_cons_lhs[not i][index] + "&=" +  bond.evaluated_cons_rhs[not i][index] + "\\\\"
                                 print(conditions_mc)
                                 print("Fertig")
-                                conditions += bond.mc_cons[i][index].replace('*','') + f"{translate_plus_minus(bond.moment_sign[i])}{bond.spring_constant}\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right)\\,{bond.rigid_lever} &= 0 \\\\"
+                                conditions += bond.mc_cons[i][index].replace('*','') + f"{translate_plus_minus(bond.moment_sign[i])}{bond.spring_constant}\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right)\\,{bond.rigid_lever}  \\\\"
                                 conditions_mc += bond.evaluated_cons_lhs[i][index] + f"{bond.spring_constant}"+"&=" + f"{bond.evaluated_cons_rhs[i][index]}" + "\\\\"
                                 print(conditions_mc)
                                 print("Fertig")
@@ -232,7 +232,7 @@ def get_symbolic_condition_mc(bond):
                             print("Fertig")
                         else: # shear forces are set separately to the spring force; with cross_sections_default one considers the direction/position of the coordinate system
                             conditions += f"{bond.mc_cons[i][index].replace('*','')}&={translate_plus_minus(not bond.cross_sections_default[i])} \
-                                {bond.spring_constant}\\,\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right) &= 0 \\\\"
+                                {bond.spring_constant}\\,\\left(\\left[{bond.deflection[1]}\\right]-\\left[{bond.deflection[0]}\\right]\\right)  \\\\"
                             conditions_mc += f"{bond.evaluated_cons_lhs[i][index]}{translate_plus_minus(not bond.cross_sections_default[i])} \
                                 {bond.spring_constant}\\,\\left(\\left[{get_evaluated_condition_mc(bond.evaluated_cons_lhs[1][3])}\\right]-\\left[{get_evaluated_condition_mc(bond.evaluated_cons_lhs[0][3])}\\right]\\right)&=\
                                     {get_evaluated_condition_mc(bond.evaluated_cons_rhs[i][index]+sign_evaluation(bond.cross_sections_default[i])*bond.spring_constant*(bond.evaluated_cons_rhs[1][3]-bond.evaluated_cons_rhs[0][3]))}\\\\"
